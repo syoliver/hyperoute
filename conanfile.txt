@@ -1,0 +1,11 @@
+[requires]
+hyperscan/5.4.0
+
+
+[options]
+hyperscan:build_chimera=True
+hyperscan:shared=False
+
+[generators]
+cmake_find_package
+cmake_paths
