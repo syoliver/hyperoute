@@ -3,6 +3,8 @@ project(hyperoute_test)
 
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
+find_package(turtle REQUIRED)
+
 add_executable(hyperoute_test main.cpp)
 
 target_link_libraries(
@@ -11,6 +13,7 @@ PRIVATE
     hyperoute
     #Boost::unit_test_framework
     Boost::headers
+    turtle::turtle
 )
 
 target_include_directories(

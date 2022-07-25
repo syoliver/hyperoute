@@ -1,6 +1,7 @@
 [requires]
 hyperscan/5.4.0
-
+turtle/1.3.2
+boost/1.79.0
 
 [options]
 hyperscan:build_chimera=True

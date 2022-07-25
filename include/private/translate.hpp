@@ -3,16 +3,17 @@
 #ifndef __HYPEROUTE__TRANSLATER_H__
 #define __HYPEROUTE__TRANSLATER_H__
 
+#include <hyperoute/builder.hpp>
+#include <hyperoute/context.hpp>
 #include <string>
 #include <string_view>
 #include <vector>
 
-struct capture_t
+namespace hyperoute
 {
-    std::string name;
-    std::size_t group;
-};
 
-std::pair<std::string, std::vector<capture_t>> translate_route(std::string_view route);
+    std::pair<std::string, std::vector<capture_t>> translate_route(std::string_view route);
+
+}
 
 #endif

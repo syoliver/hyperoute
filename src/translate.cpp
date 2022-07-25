@@ -2,6 +2,9 @@
 #include <translate.hpp>
 #include <sstream>
 
+namespace hyperoute
+{
+
 std::pair<std::string, std::vector<capture_t>> translate_route(const std::string_view route)
 {
     std::ostringstream oss_regex;
@@ -14,6 +17,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
 
     bool in_capture = false;
     bool in_regex = false;
+    std::size_t brace_cnt = 0;
     std::size_t current_group = 0;
 
     while(iter != end)
@@ -28,20 +32,27 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
             }
             else if(*iter == '}')
             {
-                if(captures.back().name.empty())
+                if(brace_cnt == 0)
                 {
-                    captures.back().name = std::string_view(token_begin, (iter-token_begin));
-                    oss_regex << "([^\\/]+)";
+                    if(captures.back().name.empty())
+                    {
+                        captures.back().name = std::string_view(token_begin, (iter-token_begin));
+                        oss_regex << "([^\\/]+)";
+                    }
+                    else
+                    {
+                        oss_regex << '(' << std::string_view(token_begin, (iter-token_begin)) << ')';
+                    }
+
+
+                    token_begin = iter+1;
+                    in_regex = false;
+                    in_capture = false;
                 }
                 else
                 {
-                    oss_regex << '(' << std::string_view(token_begin, (iter-token_begin)) << ')';
+                    --brace_cnt;
                 }
-
-
-                token_begin = iter+1;
-                in_regex = false;
-                in_capture = false;
             }
             else if(in_regex)
             {
@@ -49,24 +60,45 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                 {
                     ++current_group;
                 }
+                else if(*iter == '{')
+                {
+                    ++brace_cnt;
+                }
             }
         }
         else
         {
-            if(*iter == '{')
+            switch(*iter)
             {
-                oss_regex << std::string_view(token_begin, (iter-token_begin));
-                token_begin = iter+1;
-                captures.emplace_back();
-                ++current_group;
-                captures.back().group = current_group;
-                in_capture = true;
-            }
-            else if(*iter == '/')
-            {
-                oss_regex << std::string_view(token_begin, (iter-token_begin));
-                oss_regex << '\\';
-                token_begin = iter;
+                case '{':
+                {
+                    oss_regex << std::string_view(token_begin, (iter-token_begin));
+                    token_begin = iter+1;
+                    captures.emplace_back();
+                    ++current_group;
+                    captures.back().group = current_group;
+                    in_capture = true;
+                    break;
+                }
+                case '/':
+                case '.':
+                case '?':
+                case '(':
+                case ')':
+                case '[':
+                case ']':
+                case '*':
+                case '+':
+                case '^':
+                {
+                    oss_regex << std::string_view(token_begin, (iter-token_begin));
+                    oss_regex << '\\';
+                    token_begin = iter;
+                    break;
+                }
+                default:
+                    /* nothing */
+                    break;
             }
         }
         ++iter;
@@ -75,4 +107,6 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
     oss_regex << std::string_view(token_begin, (iter-token_begin)) << '$';
 
     return std::pair(oss_regex.str(), std::move(captures));
+}
+
 }
