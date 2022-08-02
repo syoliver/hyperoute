@@ -2,6 +2,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include <turtle/mock.hpp>
 
+#include <hyperoute/backend/hyperscan.hpp>
 #include <hyperoute/context.hpp>
 #include <hyperoute/builder.hpp>
 #include <hyperoute/router.hpp>
@@ -61,7 +62,8 @@ BOOST_AUTO_TEST_CASE( route )
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::context_t&));
     MOCK_FUNCTOR(third_ctx, void(const hyperoute::context_t&));
 
-    hyperoute::builder builder;
+    hyperoute::builder builder(hyperoute::backend::make_hyperscan());
+
     const auto router = builder.add_route("/vehicle", first_ctx)
                                .add_route("/vehicle/{id:\\w+}.{type:\\w{3}}", second_ctx)
                                .add_route("/vehicle/{id}", third_ctx)

@@ -13,7 +13,9 @@ add_library(
     src/builder.cpp
     src/router.cpp
 
-    src/route_scratch.cpp
+    src/backend/hyperscan_router.cpp
+    src/backend/hyperscan_matcher.cpp
+    src/backend/hyperscan.cpp
 )
 
 target_include_directories(
