@@ -12,11 +12,26 @@ namespace hyperoute
     {
 
     }
+
     builder& builder::add_route(std::string_view route, const route_function_t& callback)
     {
-        const auto&[regex, captures] = translate_route(route);
+        const auto&[regex, captures] = translate_route(route, false);
 
-        regexes_.push_back({
+        regexes_["*"].push_back({
+            .regex      = std::move(regex)      ,
+            .captures   = std::move(captures)   ,
+            .func       = callback
+        });
+
+        return *this;
+    }
+
+
+    builder& builder::add_route_prefix(std::string_view route, const route_function_t& callback)
+    {
+        const auto&[regex, captures] = translate_route(route, true);
+
+        regexes_["*"].push_back({
             .regex      = std::move(regex)      ,
             .captures   = std::move(captures)   ,
             .func       = callback
@@ -47,10 +62,15 @@ namespace hyperoute
 
     std::optional<router> builder::build()
     {
-        backend_->init_router(regexes_);
+        std::vector<router::verb_route_lines_context_t> route_lines;
 
-        auto route_lines = transform_route_line(regexes_);
+        for(const auto& [verb, regexes] : regexes_)
+        {
+            backend_->init_router(regexes);
+            
+            route_lines.push_back({verb, backend_->matcher(), transform_route_line(regexes)});
+        }
 
-        return router(backend_->matcher(), std::move(route_lines));
+        return router(std::move(route_lines));
     }
 }

@@ -5,7 +5,7 @@
 namespace hyperoute
 {
 
-std::pair<std::string, std::vector<capture_t>> translate_route(const std::string_view route)
+std::pair<std::string, std::vector<capture_t>> translate_route(const std::string_view route, const bool prefix_mode)
 {
     std::ostringstream oss_regex;
     std::vector<capture_t> captures;
@@ -104,7 +104,12 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
         ++iter;
     }
 
-    oss_regex << std::string_view(token_begin, (iter-token_begin)) << '$';
+    oss_regex << std::string_view(token_begin, (iter-token_begin));
+    
+    if(prefix_mode == false)
+    {
+        oss_regex << '$';
+    }
 
     return std::pair(oss_regex.str(), std::move(captures));
 }

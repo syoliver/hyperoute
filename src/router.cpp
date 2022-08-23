@@ -1,5 +1,6 @@
 #include <hyperoute/router.hpp>
 #include <hyperoute/backend/matcher_backend.hpp>
+#include <boost/container_hash/hash.hpp>
 #include <iostream>
 
 namespace hyperoute
@@ -7,21 +8,73 @@ namespace hyperoute
 
 router::router(router&&) = default;
 
-router::router(std::unique_ptr<backend::matcher_backend> backend, std::vector<route_line_t> route_lines)
-    : backend_(std::move(backend))
-    , route_lines_(std::move(route_lines))
+
+router::router(std::vector<verb_route_lines_context_t> route_lines)
+    : route_lines_(std::move(route_lines))
 {
+    index_.reserve(route_lines_.size());
+
+    boost::hash<std::string> hasher;
+    std::transform(
+        std::begin(route_lines_),
+        std::end(route_lines_),
+        std::back_inserter(index_),
+        [&hasher](const auto& route_lines){
+            return std::uint8_t(hasher(route_lines.verb));
+    });
 }
 
 
 router::~router() = default;
 
-void router::call(std::string_view url) const
+void router::call(const std::string_view verb, const std::string_view url) const
 {
-    auto matched = backend_->match(url, route_lines_);
-    if(matched.has_value())
+    static const boost::hash<std::string_view> hasher;
+
+    const auto verb_hash = std::uint8_t(hasher(verb));
+    static const auto star_hash = std::uint8_t(hasher("*"));
+
+
+    // Range Filter if... au cas où il y ait collision. Voir avec les range v3 eventuellement
+    // factoriser la recherche dans une fonction ?
+    auto iter_index = std::find(std::begin(index_), std::end(index_), verb_hash);
+
+    const verb_route_lines_context_t* lines = nullptr;
+    if(iter_index != std::end(index_))
     {
-        matched->func(matched->context);
+        const auto expected_verb_index = iter_index-std::begin(index_);
+
+        if(route_lines_[expected_verb_index].verb == verb)
+        {
+            lines = &route_lines_[expected_verb_index];
+        }
+    }
+
+    if(lines == nullptr && verb_hash != star_hash)
+    {
+        iter_index = std::find(std::begin(index_), std::end(index_), star_hash);
+
+        if(iter_index != std::end(index_))
+        {
+            const auto expected_star_index = iter_index-std::begin(index_);
+
+            if(route_lines_[expected_star_index].verb == "*")
+            {
+                lines = &route_lines_[expected_star_index];
+            }
+        }
+        
+    }
+
+    if(lines != nullptr)
+    {
+        const auto& backend = lines->backend;
+
+        auto matched = backend->match(url, lines->lines);
+        if(matched.has_value())
+        {
+            matched->func(matched->context);
+        }
     }
 }
 

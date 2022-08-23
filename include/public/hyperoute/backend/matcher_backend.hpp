@@ -5,7 +5,7 @@
 
 #include <hyperoute/route_function.hpp>
 #include <hyperoute/route_line.hpp>
-#include <hyperoute/context.hpp>
+#include <hyperoute/route_context.hpp>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -14,7 +14,7 @@ namespace hyperoute::backend
 {
     struct matched
     {
-        const context_t& context;
+        const route_context& context;
         const route_function_t& func;
     };
 

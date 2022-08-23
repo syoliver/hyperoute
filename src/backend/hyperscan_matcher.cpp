@@ -1,10 +1,11 @@
 #include <hyperoute/backend/hyperscan_matcher.hpp>
 #include <hs/ch.h>
+#include <iostream>
 
 namespace hyperoute::backend
 {
 
-hyperscan_matcher::hyperscan_matcher(std::shared_ptr<ch_database_t> db, std::vector<context_t> contexts)
+hyperscan_matcher::hyperscan_matcher(std::shared_ptr<ch_database_t> db, std::vector<route_context> contexts)
     : db_(std::move(db))
     , contexts_(std::move(contexts))
 {
@@ -40,14 +41,17 @@ static ch_callback_t on_event(unsigned int id, unsigned long long from, unsigned
                 captured[index].to - captured[index].from
             );
             
-            context.insert_or_assign(line.captures[index-1].name, match);
+            context.params.insert_or_assign(line.captures[index-1].name, match);
         }
     }
+
+    context.matched_path = ctx->url.substr(from, to);
+    context.remaining_path = ctx->url.substr(to);
 
     return CH_CALLBACK_TERMINATE;
 }
 
-context_t& hyperscan_matcher::context(const std::size_t index)
+route_context& hyperscan_matcher::context(const std::size_t index)
 {
     return contexts_[index];
 }

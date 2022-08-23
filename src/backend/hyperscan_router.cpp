@@ -18,9 +18,9 @@ static std::vector<unsigned int> generate_ids(const std::size_t count)
 }
 
 
-static std::vector<context_t> transform_context(const std::vector<regex_line_t>& regexes)
+static std::vector<route_context> transform_context(const std::vector<regex_line_t>& regexes)
 {
-    std::vector<context_t> contexts;
+    std::vector<route_context> contexts;
     contexts.reserve(regexes.size());
     
     std::transform(
@@ -28,19 +28,19 @@ static std::vector<context_t> transform_context(const std::vector<regex_line_t>&
         std::end(regexes),
         std::back_inserter(contexts),
         [](const auto& regex_line){
-            context_t context;
+            route_context context;
             std::transform(
                 std::begin(regex_line.captures),
                 std::end(regex_line.captures),
-                std::inserter(context, std::end(context)),
+                std::inserter(context.params, std::end(context.params)),
                 [](const auto& capture){
                     return std::pair(capture.name, std::string_view());
             });
-            return std::move(context);
+            return context;
     });
 
 
-    return std::move(contexts);
+    return contexts;
 }
 
 static std::vector<const char*> transform_routes(const std::vector<regex_line_t>& regexes)
@@ -70,6 +70,7 @@ static std::vector<const char*> transform_routes(const std::vector<regex_line_t>
     ch_compile_error_t *err = nullptr;
     ch_database_t *db = nullptr;
     
+
     ch_compile_multi(routes.data(), nullptr, ids.data(), routes.size(), CH_MODE_GROUPS, nullptr, &db, &err);
     db_.reset(db, ch_free_database);
 }

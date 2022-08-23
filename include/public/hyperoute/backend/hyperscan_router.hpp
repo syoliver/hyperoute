@@ -5,7 +5,7 @@
 
 #include <hyperoute/backend/router_backend.hpp>
 #include <hyperoute/ch_forward.hpp>
-#include <hyperoute/context.hpp>
+#include <hyperoute/route_context.hpp>
 #include <hyperoute/regex_line.hpp>
 
 namespace hyperoute::backend
@@ -19,7 +19,7 @@ namespace hyperoute::backend
 
     private:
         std::shared_ptr<ch_database_t> db_;
-        std::vector<context_t> contexts_;
+        std::vector<route_context> contexts_;
     };
 
 }

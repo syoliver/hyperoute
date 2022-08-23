@@ -9,6 +9,7 @@
 #include <hyperoute/route_line.hpp>
 #include <vector>
 #include <memory>
+#include <string_view>
 
 namespace hyperoute
 {
@@ -19,6 +20,7 @@ namespace hyperoute
         class matcher_backend;
     }
 
+
     class router
     {
     public:
@@ -26,15 +28,25 @@ namespace hyperoute
         ~router();
 
     private:
+        using backend_ptr = std::unique_ptr<backend::matcher_backend>;
+
+
+        struct verb_route_lines_context_t
+        {
+            std::string                 verb;
+            backend_ptr                 backend;
+            std::vector<route_line_t>   lines;
+        };
+
         friend class builder;
-        router(std::unique_ptr<backend::matcher_backend> backend, std::vector<route_line_t> route_lines);
+        router(std::vector<verb_route_lines_context_t> route_lines);
 
     public:
-        void call(std::string_view url) const;
+        void call(std::string_view verb, std::string_view url) const;
 
     private:
-        std::unique_ptr<backend::matcher_backend> backend_;
-        std::vector<route_line_t> route_lines_;
+        std::vector<std::uint8_t> index_;
+        std::vector<verb_route_lines_context_t> route_lines_;
     };
 
 }

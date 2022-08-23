@@ -5,7 +5,7 @@ option(BUILD_TEST ON)
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
 find_package(hyperscan REQUIRED)
-
+find_package(robin_hood REQUIRED)
 add_library(
     hyperoute
     
@@ -30,6 +30,7 @@ target_link_libraries(
     hyperoute
 PRIVATE
     hyperscan::chimera
+    robin_hood::robin_hood
 )
 
 set_target_properties(hyperoute PROPERTIES CXX_STANDARD 17)
