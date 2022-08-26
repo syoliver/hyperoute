@@ -8,7 +8,7 @@
 
 namespace hyperoute::backend
 {
-    std::unique_ptr<router_backend> make_hyperscan();
+    std::shared_ptr<router_backend> make_hyperscan();
 }
 
 #endif

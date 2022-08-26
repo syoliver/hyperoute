@@ -8,7 +8,7 @@
 
 namespace hyperoute
 {
-    builder::builder(std::unique_ptr<backend::router_backend> backend)
+    builder::builder(std::shared_ptr<backend::router_backend> backend)
         : backend_(std::move(backend))
     {
 

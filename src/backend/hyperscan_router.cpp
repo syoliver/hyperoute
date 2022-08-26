@@ -14,7 +14,7 @@ static std::vector<unsigned int> generate_ids(const std::size_t count)
     std::vector<unsigned int> ids(count, 0);
     std::iota(std::begin(ids), std::end(ids), 0);
 
-    return std::move(ids);
+    return ids;
 }
 
 
@@ -57,7 +57,7 @@ static std::vector<const char*> transform_routes(const std::vector<regex_line_t>
     });
 
 
-    return std::move(routes);
+    return routes;
 }
 
 /* virtual */ void hyperscan_router::init_router(const std::vector<regex_line_t>& route_regexes)

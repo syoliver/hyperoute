@@ -17,6 +17,10 @@ add_library(
     src/backend/hyperscan_router.cpp
     src/backend/hyperscan_matcher.cpp
     src/backend/hyperscan.cpp
+
+    src/backend/boost_router.cpp
+    src/backend/boost_matcher.cpp
+    src/backend/boost.cpp
 )
 
 target_include_directories(

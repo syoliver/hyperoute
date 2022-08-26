@@ -4,6 +4,7 @@
 #include <turtle/mock.hpp>
 
 #include <hyperoute/backend/hyperscan.hpp>
+#include <hyperoute/backend/boost.hpp>
 #include <hyperoute/route_context.hpp>
 #include <hyperoute/builder.hpp>
 #include <hyperoute/router.hpp>
@@ -96,15 +97,15 @@ BOOST_DATA_TEST_CASE( translation_dot_brace, boost::unit_test::data::make({ true
     BOOST_TEST(result.second[0].group == 1);
 }
 
+const auto data_test_backends = boost::unit_test::data::make({ hyperoute::backend::make_hyperscan(), hyperoute::backend::make_boost() });
 
-
-BOOST_AUTO_TEST_CASE( route )
+BOOST_DATA_TEST_CASE( route, data_test_backends, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(third_ctx, void(const hyperoute::route_context&));
 
-    hyperoute::builder builder(hyperoute::backend::make_hyperscan());
+    hyperoute::builder builder(backend);
 
     builder.add_route("/vehicle", first_ctx);
     builder.add_route("/vehicle/{id:\\w+}.{type:\\w{3}}", second_ctx);
@@ -128,13 +129,13 @@ BOOST_AUTO_TEST_CASE( route )
     }
 }
 
-BOOST_AUTO_TEST_CASE( route_prefix )
+BOOST_DATA_TEST_CASE( route_prefix, data_test_backends, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(third_ctx, void(const hyperoute::route_context&));
 
-    hyperoute::builder builder(hyperoute::backend::make_hyperscan());
+    hyperoute::builder builder(backend);
 
     builder.add_route_prefix("/static_1/{id}", first_ctx);
     builder.add_route_prefix("/static_2/{id}", second_ctx);
@@ -151,12 +152,12 @@ BOOST_AUTO_TEST_CASE( route_prefix )
 }
 
 
-BOOST_AUTO_TEST_CASE( route_verb )
+BOOST_DATA_TEST_CASE( route_verb, data_test_backends, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
 
-    hyperoute::builder builder(hyperoute::backend::make_hyperscan());
+    hyperoute::builder builder(backend);
 
     builder.add_route("/test", first_ctx).methods({"GET", "POST"});
     builder.add_route_prefix("/", second_ctx);

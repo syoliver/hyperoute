@@ -25,7 +25,7 @@ namespace hyperoute
     class builder
     {
     public:
-        builder(std::unique_ptr<backend::router_backend> backend);
+        builder(std::shared_ptr<backend::router_backend> backend);
         builder_route_modifier add_route(std::string_view route, const route_function_t& callback);
         builder_route_modifier add_route_prefix(std::string_view route, const route_function_t& callback);
         std::optional<router> build();
@@ -33,7 +33,7 @@ namespace hyperoute
     private:
         friend class builder_route_modifier;
 
-        using router_backend_ptr = std::unique_ptr<backend::router_backend>;
+        using router_backend_ptr = std::shared_ptr<backend::router_backend>;
 
         router_backend_ptr backend_;
 
