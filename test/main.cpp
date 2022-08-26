@@ -149,3 +149,32 @@ BOOST_AUTO_TEST_CASE( route_prefix )
         mock::verify();
     }
 }
+
+
+BOOST_AUTO_TEST_CASE( route_verb )
+{
+    MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
+    MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
+
+    hyperoute::builder builder(hyperoute::backend::make_hyperscan());
+
+    builder.add_route("/test", first_ctx).methods({"GET", "POST"});
+    builder.add_route_prefix("/", second_ctx);
+
+    const auto router = builder.build();
+
+    {
+        mock::sequence s;
+
+        MOCK_EXPECT(first_ctx).once().with([](const hyperoute::route_context& ctx){
+            return ctx.matched_path == "/test";
+        }).in(s);
+
+        MOCK_EXPECT(second_ctx).once().with([](const hyperoute::route_context& ctx){
+            return ctx.matched_path == "/";
+        }).in(s);
+
+        router->call("GET", "/test");
+        router->call("LIST", "/test");
+    }
+}

@@ -11,6 +11,7 @@ add_library(
     
     src/translate.cpp
     src/builder.cpp
+    src/builder_route_modifier.cpp
     src/router.cpp
 
     src/backend/hyperscan_router.cpp

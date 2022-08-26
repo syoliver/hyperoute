@@ -1,7 +1,6 @@
 #include <hyperoute/router.hpp>
 #include <hyperoute/backend/matcher_backend.hpp>
 #include <boost/container_hash/hash.hpp>
-#include <iostream>
 
 namespace hyperoute
 {
@@ -34,9 +33,6 @@ void router::call(const std::string_view verb, const std::string_view url) const
     const auto verb_hash = std::uint8_t(hasher(verb));
     static const auto star_hash = std::uint8_t(hasher("*"));
 
-
-    // Range Filter if... au cas où il y ait collision. Voir avec les range v3 eventuellement
-    // factoriser la recherche dans une fonction ?
     auto iter_index = std::find(std::begin(index_), std::end(index_), verb_hash);
 
     const verb_route_lines_context_t* lines = nullptr;

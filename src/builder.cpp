@@ -3,6 +3,7 @@
 #include <translate.hpp>
 #include <hyperoute/backend/router_backend.hpp>
 #include <hyperoute/backend/matcher_backend.hpp>
+#include <hyperoute/builder_route_modifier.hpp>
 #include <numeric>
 
 namespace hyperoute
@@ -13,31 +14,37 @@ namespace hyperoute
 
     }
 
-    builder& builder::add_route(std::string_view route, const route_function_t& callback)
+    builder_route_modifier builder::add_route(std::string_view route, const route_function_t& callback)
     {
         const auto&[regex, captures] = translate_route(route, false);
 
-        regexes_["*"].push_back({
-            .regex      = std::move(regex)      ,
-            .captures   = std::move(captures)   ,
-            .func       = callback
-        });
+        lines_.emplace_back(
+            regex_line_t{
+                .regex      = std::move(regex)      ,
+                .captures   = std::move(captures)   ,
+                .func       = callback
+            },
+            true
+        );
 
-        return *this;
+        return builder_route_modifier(*this, lines_.size()-1);
     }
 
 
-    builder& builder::add_route_prefix(std::string_view route, const route_function_t& callback)
+    builder_route_modifier builder::add_route_prefix(std::string_view route, const route_function_t& callback)
     {
         const auto&[regex, captures] = translate_route(route, true);
 
-        regexes_["*"].push_back({
-            .regex      = std::move(regex)      ,
-            .captures   = std::move(captures)   ,
-            .func       = callback
-        });
+        lines_.emplace_back(
+            regex_line_t{
+                .regex      = std::move(regex)      ,
+                .captures   = std::move(captures)   ,
+                .func       = callback
+            },
+            true
+        );
 
-        return *this;
+        return builder_route_modifier(*this, lines_.size()-1);
     }
 
     static std::vector<route_line_t> transform_route_line(const std::vector<regex_line_t>& regexes)
@@ -64,11 +71,39 @@ namespace hyperoute
     {
         std::vector<router::verb_route_lines_context_t> route_lines;
 
-        for(const auto& [verb, regexes] : regexes_)
+        std::vector<regex_line_t> regexes;
+        regexes.reserve(lines_.size());
+        for(const auto& [verb, regexes_index] : regexes_)
         {
+            regexes.clear();
+
+            std::transform(
+                std::begin(regexes_index),
+                std::end(regexes_index),
+                std::back_inserter(regexes),
+                [this](const auto& index){
+                    return lines_[index].first;
+            });
+
             backend_->init_router(regexes);
             
             route_lines.push_back({verb, backend_->matcher(), transform_route_line(regexes)});
+        }
+
+        {
+            regexes.clear();
+            for(const auto& [regex, has_star]: lines_)
+            {
+                if(has_star)
+                {
+                    regexes.push_back(regex);
+                }
+            }
+
+
+            backend_->init_router(regexes);
+            
+            route_lines.push_back({"*", backend_->matcher(), transform_route_line(regexes)});
         }
 
         return router(std::move(route_lines));
