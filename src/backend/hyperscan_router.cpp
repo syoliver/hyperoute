@@ -29,14 +29,14 @@ static std::vector<route_context> transform_context(const std::vector<regex_line
         std::back_inserter(contexts),
         [](const auto& regex_line){
             route_context context;
-            std::transform(
-                std::begin(regex_line.captures),
-                std::end(regex_line.captures),
-                std::inserter(context.params, std::end(context.params)),
-                [](const auto& capture){
-                    return std::pair(capture.name, std::string_view());
-            });
-            return context;
+            context.params.reserve(regex_line.captures.size());
+
+            for(const auto& capture: regex_line.captures)
+            {
+                // TODO: Check if insertion was successful
+                context.params.emplace(capture.name, std::string_view());
+            }
+            return context; 
     });
 
 

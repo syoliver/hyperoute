@@ -1,5 +1,6 @@
 #include <hyperoute/backend/hyperscan_matcher.hpp>
 #include <hs/ch.h>
+#include <iostream>
 
 namespace hyperoute::backend
 {
@@ -31,21 +32,20 @@ static ch_callback_t on_event(unsigned int id, unsigned long long from, unsigned
     auto& context = ctx->self->context(id);
     const auto& line = ctx->route_lines[id];
     ctx->index = id;
-    for(std::size_t index = 1 ; index < size ; ++index)
+    auto iter_param = std::begin(context.params);
+    for(std::size_t index = 1 ; index < size ; ++index, ++iter_param)
     {
-        const auto& capture_name = line.captures[index-1].name;
         if(captured[index].flags == CH_CAPTURE_FLAG_ACTIVE)
         {
             const auto match = ctx->url.substr(
                 captured[index].from,
                 captured[index].to - captured[index].from
             );
-            
-            context.params.insert_or_assign(capture_name, match);
+            iter_param->second = match;
         }
         else
         {
-            context.params.insert_or_assign(capture_name, std::string_view());
+            iter_param->second = std::string_view();
         }
     }
 

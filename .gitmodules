@@ -1,0 +1,3 @@
+[submodule "benchmark/third-parties/r3"]
+	path = benchmark/third-parties/r3
+	url = https://github.com/syoliver/r3.git

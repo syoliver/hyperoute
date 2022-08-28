@@ -28,29 +28,24 @@ namespace hyperoute::backend
             {
                 const auto& line = route_lines[context_index];
                 auto& matched_context = contexts_[context_index];
+                auto iter_params = std::begin(matched_context.params);
 
-                for(std::size_t match_index = *iter+1 ; match_index < *iter+line.captures.size()+1 ; ++match_index)
+                for(std::size_t match_index = *iter+1 ; match_index < *iter+line.captures.size()+1 ; ++match_index, ++iter_params)
                 {
                     const auto capture_index = match_index-*iter-1;
-                    const auto& capture_name = line.captures[capture_index].name;
 
                     const auto match_subindex = match_index+1;
+
+                    auto& params = matched_context.params;
                     if(matcher[match_subindex].matched)
                     {
                         const auto count = matcher[match_subindex].second - matcher[match_subindex].first;
-                        auto& params = matched_context.params;
-
-                        params.insert_or_assign(
-                            capture_name,
-                            std::string_view(matcher[match_subindex].first, count)
-                        );
+                        iter_params->second = std::string_view(matcher[match_subindex].first, count);
 
                     }
                     else
                     {
-                        auto& params = matched_context.params;
-
-                        params.insert_or_assign(capture_name, std::string_view());
+                        iter_params->second = std::string_view();
                     }
                 }
 

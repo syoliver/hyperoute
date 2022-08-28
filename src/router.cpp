@@ -26,6 +26,12 @@ router::router(std::vector<verb_route_lines_context_t> route_lines)
 
 router::~router() = default;
 
+router& router::operator=(router&& other)
+{
+    std::swap(route_lines_, other.route_lines_);
+    std::swap(index_, other.index_);
+}
+
 void router::call(const std::string_view verb, const std::string_view url) const
 {
     static const boost::hash<std::string_view> hasher;

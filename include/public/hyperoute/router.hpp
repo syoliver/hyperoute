@@ -25,6 +25,7 @@ namespace hyperoute
     {
     public:
         router(router&&);
+        router(const router&) = delete;
         ~router();
 
     private:
@@ -43,6 +44,8 @@ namespace hyperoute
 
     public:
         void call(std::string_view verb, std::string_view url) const;
+        router& operator=(const router&) = delete;
+        router& operator=(router&&);
 
     private:
         std::vector<std::uint8_t> index_;
