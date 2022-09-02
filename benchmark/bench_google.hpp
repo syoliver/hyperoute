@@ -1,18 +1,7 @@
-#include "benchmark/benchmark.h"
+#pragma once
 
-#include <hyperoute/backend/hyperscan_router.hpp>
-#include <hyperoute/backend/boost_router.hpp>
-#include <hyperoute/route_context.hpp>
-#include <hyperoute/builder.hpp>
-#include <hyperoute/router.hpp>
-#include <valgrind/callgrind.h>
-#ifdef WITH_R3
-#   include <r3.h>
-#endif
-
-#include <optional>
-
-#include <iostream>
+#ifndef __BENCH__HYPEROUTE__GOOGLE__H__
+#define __BENCH__HYPEROUTE__GOOGLE__H__
 
 // https://github.com/julienschmidt/go-http-routing-benchmark/blob/master/gplus_test.go
 
@@ -216,4 +205,4 @@ BENCHMARK_F(Google_R3Benchmark, R3)(benchmark::State& st)
 
 #endif
 
-BENCHMARK_MAIN();
+#endif

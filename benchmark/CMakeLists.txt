@@ -4,7 +4,7 @@ project(hyperoute_test)
 option(WITH_R3 OFF)
 find_package(benchmark REQUIRED)
 
-add_executable(hyperoute_bench main.cpp)
+add_executable(hyperoute_bench main_hyperoute.cpp)
 
 if(WITH_R3)
     add_subdirectory(third-parties)
@@ -37,3 +37,16 @@ endif()
 
 
 set_target_properties(hyperoute_bench PROPERTIES CXX_STANDARD 17)
+
+
+add_executable(params_bench main_params.cpp)
+
+target_link_libraries(
+    params_bench
+PRIVATE
+    hyperoute
+    benchmark::benchmark
+)
+
+
+set_target_properties(params_bench PROPERTIES CXX_STANDARD 17)

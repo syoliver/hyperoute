@@ -27,10 +27,16 @@ namespace hyperoute
         nodes_.reserve(size);
     }
     
+    void context_params::clear()
+    {
+        hashs_.clear();
+        nodes_.clear();
+    }
+    
     std::pair<context_params::iterator, bool> context_params::insert( const_iterator hint, const value_type& value )
     {
         static const boost::hash<std::string_view> hasher;
-        std::uint64_t hash = hasher(value.first);
+        const auto hash = hasher(value.first);
         auto iter = inner_find(value.first, hash);
         bool inserted = false;
         if(iter == end())
@@ -45,7 +51,7 @@ namespace hyperoute
     std::pair<context_params::iterator, bool> context_params::insert( const_iterator hint, value_type&& value )
     {
         static const boost::hash<std::string_view> hasher;
-        std::uint64_t hash = hasher(value.first);
+        const auto hash = hasher(value.first);
         auto iter = inner_find(value.first, hash);
         bool inserted = false;
         if(iter == end())
@@ -60,7 +66,7 @@ namespace hyperoute
     std::pair<context_params::iterator, bool> context_params::emplace(const std::string_view key, std::string_view value)
     {
         static const boost::hash<std::string_view> hasher;
-        std::uint64_t hash = hasher(key);
+        const auto hash = hasher(key);
         auto iter = inner_find(key, hash);
         bool inserted = false;
         if(iter == end())
@@ -76,7 +82,7 @@ namespace hyperoute
     {
         static const boost::hash<std::string_view> hasher;
 
-        const std::uint16_t search_hash = hasher(key);
+        const auto search_hash = hasher(key);
 
         return inner_find(key, search_hash);
     }
@@ -105,31 +111,48 @@ namespace hyperoute
     }
 
 
-    context_params::iterator context_params::inner_find(const std::string_view key, const std::uint16_t search_hash)
+    context_params::iterator context_params::inner_find(const std::string_view key, const std::size_t search_hash)
     {
-        const auto node_count = nodes_.size();
-        for(std::size_t node_index = 0 ; node_index < node_count ; ++node_index)
+        const auto iter_end = std::end(hashs_);
+        auto iter = std::lower_bound(
+            std::begin(hashs_),
+            iter_end,
+            std::pair<std::size_t, std::size_t>(search_hash, 0),
+            [](const auto& lhs, const auto& rhs){
+                return lhs.first < rhs.first;
+        });
+
+        while(iter != iter_end && iter->first == search_hash)
         {
-            if(hashs_[node_index] == search_hash && nodes_[node_index].first == key)
+            if(nodes_[iter->second].first == key)
             {
-                return std::begin(nodes_) + node_index;
+                return std::begin(nodes_) + (iter - std::begin(hashs_));
             }
+            ++iter;
         }
         return std::end(nodes_);
     }
     
-    context_params::iterator context_params::inner_emplace(const std::string_view key, std::string_view value, const std::uint16_t hash)
+    context_params::iterator context_params::inner_emplace(const std::string_view key, std::string_view value, const std::size_t hash)
     {
-        hashs_.push_back(hash);
+        hashs_.push_back(std::pair(hash, nodes_.size()));
         nodes_.emplace_back(key, value);
+
+        std::sort(std::begin(hashs_), std::end(hashs_), [](const auto& lhs, const auto& rhs){
+            return lhs.first < rhs.first;
+        });
 
         return std::rend(nodes_).base();
     }
     
-    context_params::iterator context_params::inner_insert(std::pair<std::string, std::string_view> node, const std::uint16_t hash)
+    context_params::iterator context_params::inner_insert(std::pair<std::string, std::string_view> node, const std::size_t hash)
     {
-        hashs_.push_back(hash);
+        hashs_.push_back(std::pair(hash, nodes_.size()));
         nodes_.push_back(std::move(node));
+
+        std::sort(std::begin(hashs_), std::end(hashs_), [](const auto& lhs, const auto& rhs){
+            return lhs.first < rhs.first;
+        });
 
         return std::rend(nodes_).base();
     }

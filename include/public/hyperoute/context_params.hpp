@@ -33,6 +33,8 @@ namespace hyperoute
         ~context_params();
 
         void reserve(std::size_t size);
+        void clear();
+
         std::pair<iterator, bool> insert( const_iterator hint, const value_type& value );
         std::pair<iterator, bool> insert( const_iterator hint, value_type&& value );
         std::pair<iterator, bool> emplace(const std::string_view key, std::string_view value);
@@ -50,13 +52,13 @@ namespace hyperoute
         context_params& operator=(context_params&&);
 
     private:
-        iterator inner_find(const std::string_view key, std::uint16_t hash);
+        iterator inner_find(const std::string_view key, std::size_t hash);
         
-        iterator inner_emplace(const std::string_view key, std::string_view value, std::uint16_t hash);
-        iterator inner_insert(std::pair<std::string, std::string_view> node, std::uint16_t hash);
+        iterator inner_emplace(const std::string_view key, std::string_view value, std::size_t hash);
+        iterator inner_insert(std::pair<std::string, std::string_view> node, std::size_t hash);
 
     private:
-        std::vector<std::uint16_t> hashs_;
+        std::vector<std::pair<std::size_t, std::size_t>> hashs_;
         std::vector<node> nodes_;
     };
 }
