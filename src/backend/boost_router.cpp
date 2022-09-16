@@ -1,5 +1,6 @@
 #include <hyperoute/backend/boost_router.hpp>
 #include <hyperoute/backend/boost_matcher.hpp>
+#include <hyperoute/error.hpp>
 #include <numeric>
 #include <sstream>
 #include <iostream>
@@ -29,7 +30,7 @@ static auto generate_capture_indexes(const std::vector<regex_line_t>& route_rege
 }
 
 
-static auto transform_context(const std::vector<regex_line_t>& regexes)
+static auto transform_context(const std::vector<regex_line_t>& regexes, std::error_condition& ec)
 {
     std::vector<route_context> contexts;
     contexts.reserve(regexes.size());
@@ -38,14 +39,17 @@ static auto transform_context(const std::vector<regex_line_t>& regexes)
         std::begin(regexes),
         std::end(regexes),
         std::back_inserter(contexts),
-        [](const auto& regex_line){
+        [&ec](const auto& regex_line){
             route_context context;
             context.params.reserve(regex_line.captures.size());
             
             for(const auto& capture: regex_line.captures)
             {
-                // TODO: Check if insertion was successful
-                context.params.emplace(capture.name, std::string_view());
+                const auto [_, inserted] = context.params.emplace(capture.name, std::string_view());
+                if(inserted == false)
+                {
+                    ec = make_error_condition(error::duplicate_parameter);
+                }
             }
             return context;
     });
@@ -71,15 +75,20 @@ static auto generate_whole_regex(const std::vector<regex_line_t>& regexes)
     return oss.str();
 }
 
-/* virtual */ void boost_router::init_router(const std::vector<regex_line_t>& route_regexes)
+/* virtual */ void boost_router::init_router(const std::vector<regex_line_t>& route_regexes, std::error_condition& ec)
 {
     capture_indexes_ = generate_capture_indexes(route_regexes);
 
     const auto whole_regex = generate_whole_regex(route_regexes);
 
-    contexts_ = transform_context(route_regexes);
+    contexts_ = transform_context(route_regexes, ec);
 
     db_ = std::make_shared<boost::regex>(std::move(whole_regex));
+    if(db_->status() != 0)
+    {
+        ec = make_error_condition(error::regex_syntax);
+        db_ = nullptr;
+    }
 }
 
 /* virtual */ std::unique_ptr<matcher_backend> boost_router::matcher()

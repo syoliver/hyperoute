@@ -16,10 +16,29 @@ PRIVATE
     turtle::turtle
 )
 
+set_target_properties(hyperoute_test PROPERTIES CXX_STANDARD 17)
+
+add_test(NAME hyperoute_test COMMAND hyperoute_test)
+
+
+#########################################################
+
+add_executable(translate_route_test translate_route.cpp)
+
+target_link_libraries(
+    translate_route_test
+PRIVATE
+    hyperoute
+    Boost::headers
+)
+
 target_include_directories(
-    hyperoute_test
+    translate_route_test
 PUBLIC
     ../include/private
 )
 
-set_target_properties(hyperoute_test PROPERTIES CXX_STANDARD 17)
+set_target_properties(translate_route_test PROPERTIES CXX_STANDARD 17)
+
+add_test(NAME translate_route_test COMMAND translate_route_test)
+

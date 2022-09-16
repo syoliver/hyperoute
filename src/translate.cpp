@@ -1,11 +1,13 @@
 
 #include <translate.hpp>
+#include <error_category.hpp>
+#include <hyperoute/error.hpp>
 #include <sstream>
 
 namespace hyperoute
 {
 
-std::pair<std::string, std::vector<capture_t>> translate_route(const std::string_view route, const bool prefix_mode)
+std::pair<std::string, std::vector<capture_t>> translate_route(const std::string_view route, const bool prefix_mode, std::error_condition& ec)
 {
     std::ostringstream oss_regex;
     std::vector<capture_t> captures;
@@ -20,8 +22,12 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
     std::size_t brace_cnt = 0;
     std::size_t current_group = 0;
 
-    while(iter != end)
+    bool want_next_skip = false;
+    bool skip = true;
+    while(iter != end && !ec)
     {
+        skip = want_next_skip;
+        want_next_skip = false;
         if(in_capture)
         {
             if(in_regex == false && *iter == ':')
@@ -56,13 +62,28 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
             }
             else if(in_regex)
             {
-                if(*iter == '(')
+                if(*iter == '\\')
                 {
-                    ++current_group;
+                    want_next_skip = true;
                 }
-                else if(*iter == '{')
+                else if(want_next_skip == false)
                 {
-                    ++brace_cnt;
+                    if(*iter == '(')
+                    {
+                        ++current_group;
+                    }
+                    else if(*iter == '{')
+                    {
+                        ++brace_cnt;
+                    }
+                    else if(*iter == '}')
+                    {
+                        if(brace_cnt == 0)
+                        {
+                            ec = make_error_condition(error::unbalanced_brace);
+                        }
+                        --brace_cnt;
+                    }
                 }
             }
         }
@@ -72,12 +93,35 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
             {
                 case '{':
                 {
-                    oss_regex << std::string_view(token_begin, (iter-token_begin));
-                    token_begin = iter+1;
-                    captures.emplace_back();
-                    ++current_group;
-                    captures.back().group = current_group;
-                    in_capture = true;
+                    if(skip)
+                    {
+                        oss_regex << "\\{";
+                    }
+                    else
+                    {
+                        oss_regex << std::string_view(token_begin, (iter-token_begin));
+                        token_begin = iter+1;
+                        captures.emplace_back();
+                        ++current_group;
+                        captures.back().group = current_group;
+                        in_capture = true;
+                    }
+                    break;
+                }
+                case '}':
+                {
+                    if(skip)
+                    {
+                        oss_regex << "\\}";
+                    }
+                    else
+                    {
+                        ec = make_error_condition(error::unbalanced_brace);
+                    }
+                }
+                case '\\':
+                {
+                    want_next_skip = true;
                     break;
                 }
                 case '/':
@@ -102,6 +146,11 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
             }
         }
         ++iter;
+    }
+
+    if(brace_cnt > 0)
+    {
+        ec = make_error_condition(error::unbalanced_brace);
     }
 
     oss_regex << std::string_view(token_begin, (iter-token_begin));

@@ -14,6 +14,7 @@
 #include <optional>
 #include <set>
 #include <map>
+#include <system_error>
 
 namespace hyperoute
 {
@@ -26,9 +27,9 @@ namespace hyperoute
     {
     public:
         builder(std::shared_ptr<backend::router_backend> backend);
-        builder_route_modifier add_route(std::string_view route, const route_function_t& callback);
-        builder_route_modifier add_route_prefix(std::string_view route, const route_function_t& callback);
-        std::optional<router> build();
+        builder_route_modifier add_route(std::string_view route, std::error_condition& ec, const route_function_t& callback);
+        builder_route_modifier add_route_prefix(std::string_view route, std::error_condition& ec, const route_function_t& callback);
+        std::optional<router> build(std::error_condition& ec);
 
     private:
         friend class builder_route_modifier;

@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(hyperoute)
 
-option(BUILD_TEST ON)
+option(BUILD_TESTING "Build tests" ON)
+option(BUILD_BENCHMARK "Build benchmarks" ON)
+
+
+include(CTest)
+
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
 find_package(hyperscan REQUIRED)
@@ -13,6 +18,8 @@ add_library(
     src/builder.cpp
     src/builder_route_modifier.cpp
     src/router.cpp
+    src/error.cpp
+    src/error_category.cpp
 
     src/context_params.cpp
 
@@ -41,6 +48,11 @@ PRIVATE
 
 set_target_properties(hyperoute PROPERTIES CXX_STANDARD 17)
 
-add_subdirectory(test)
 
-add_subdirectory(benchmark)
+if(BUILD_TESTING)
+    add_subdirectory(test)
+endif()
+
+if(BUILD_BENCHMARK)
+    add_subdirectory(benchmark)
+endif()

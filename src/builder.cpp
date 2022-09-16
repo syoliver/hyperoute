@@ -5,6 +5,7 @@
 #include <hyperoute/backend/matcher_backend.hpp>
 #include <hyperoute/builder_route_modifier.hpp>
 #include <numeric>
+#include <iostream>
 
 namespace hyperoute
 {
@@ -14,9 +15,9 @@ namespace hyperoute
 
     }
 
-    builder_route_modifier builder::add_route(std::string_view route, const route_function_t& callback)
+    builder_route_modifier builder::add_route(std::string_view route, std::error_condition& ec, const route_function_t& callback)
     {
-        const auto&[regex, captures] = translate_route(route, false);
+        const auto&[regex, captures] = translate_route(route, false, ec);
 
         lines_.emplace_back(
             regex_line_t{
@@ -31,9 +32,9 @@ namespace hyperoute
     }
 
 
-    builder_route_modifier builder::add_route_prefix(std::string_view route, const route_function_t& callback)
+    builder_route_modifier builder::add_route_prefix(std::string_view route, std::error_condition& ec, const route_function_t& callback)
     {
-        const auto&[regex, captures] = translate_route(route, true);
+        const auto&[regex, captures] = translate_route(route, true, ec);
 
         lines_.emplace_back(
             regex_line_t{
@@ -67,7 +68,7 @@ namespace hyperoute
         return std::move(lines);
     }
 
-    std::optional<router> builder::build()
+    std::optional<router> builder::build(std::error_condition& ec)
     {
         std::vector<router::verb_route_lines_context_t> route_lines;
 
@@ -85,8 +86,13 @@ namespace hyperoute
                     return lines_[index].first;
             });
 
-            backend_->init_router(regexes);
+            backend_->init_router(regexes, ec);
             
+            if(ec)
+            {
+                return std::nullopt;
+            }
+
             route_lines.push_back({verb, backend_->matcher(), transform_route_line(regexes)});
         }
 
@@ -101,11 +107,19 @@ namespace hyperoute
             }
 
 
-            backend_->init_router(regexes);
-            
-            route_lines.push_back({"*", backend_->matcher(), transform_route_line(regexes)});
-        }
+            if(regexes.empty() == false)
+            {
+                backend_->init_router(regexes, ec);
 
+                if(ec)
+                {
+                    return std::nullopt;
+                }
+
+                route_lines.push_back({"*", backend_->matcher(), transform_route_line(regexes)});
+            }
+        }
+        
         return router(std::move(route_lines));
     }
 }

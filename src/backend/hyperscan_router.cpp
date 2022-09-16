@@ -1,7 +1,9 @@
 #include <hyperoute/backend/hyperscan_router.hpp>
 #include <hyperoute/backend/hyperscan_matcher.hpp>
+#include <hyperoute/error.hpp>
 #include <hs/ch.h>
 #include <numeric>
+#include <iostream>
 
 namespace hyperoute::backend
 {
@@ -18,7 +20,7 @@ static std::vector<unsigned int> generate_ids(const std::size_t count)
 }
 
 
-static std::vector<route_context> transform_context(const std::vector<regex_line_t>& regexes)
+static std::vector<route_context> transform_context(const std::vector<regex_line_t>& regexes, std::error_condition& ec)
 {
     std::vector<route_context> contexts;
     contexts.reserve(regexes.size());
@@ -27,14 +29,17 @@ static std::vector<route_context> transform_context(const std::vector<regex_line
         std::begin(regexes),
         std::end(regexes),
         std::back_inserter(contexts),
-        [](const auto& regex_line){
+        [&ec](const auto& regex_line){
             route_context context;
             context.params.reserve(regex_line.captures.size());
 
             for(const auto& capture: regex_line.captures)
             {
-                // TODO: Check if insertion was successful
-                context.params.emplace(capture.name, std::string_view());
+                const auto [_, inserted] = context.params.emplace(capture.name, std::string_view());
+                if(inserted == false)
+                {
+                    ec = make_error_condition(error::duplicate_parameter);
+                }
             }
             return context; 
     });
@@ -60,24 +65,42 @@ static std::vector<const char*> transform_routes(const std::vector<regex_line_t>
     return routes;
 }
 
-/* virtual */ void hyperscan_router::init_router(const std::vector<regex_line_t>& route_regexes)
+/* virtual */ void hyperscan_router::init_router(const std::vector<regex_line_t>& route_regexes, std::error_condition& ec)
 {
     const auto& routes = transform_routes(route_regexes);
     
     const auto& ids = generate_ids(route_regexes.size());
-    contexts_ = transform_context(route_regexes);
+    contexts_ = transform_context(route_regexes, ec);
+    if(ec)
+    {
+        return;
+    }
 
     ch_compile_error_t *err = nullptr;
     ch_database_t *db = nullptr;
     
+    const auto status = ch_compile_multi(routes.data(), nullptr, ids.data(), routes.size(), CH_MODE_GROUPS, nullptr, &db, &err);
+ 
 
-    ch_compile_multi(routes.data(), nullptr, ids.data(), routes.size(), CH_MODE_GROUPS, nullptr, &db, &err);
-    db_.reset(db, ch_free_database);
+    if(status == CH_SUCCESS)
+    {
+        db_.reset(db, ch_free_database);
+    }
+    else
+    {
+        ec = make_error_condition(error::regex_syntax);
+    }
+
+    ch_free_compile_error(err);
 }
 
 /* virtual */ std::unique_ptr<matcher_backend> hyperscan_router::matcher()
 {
-    return std::make_unique<hyperscan_matcher>(db_, contexts_);
+    if(db_)
+    {
+        return std::make_unique<hyperscan_matcher>(db_, contexts_);
+    }
+    return nullptr;
 }
 
 }

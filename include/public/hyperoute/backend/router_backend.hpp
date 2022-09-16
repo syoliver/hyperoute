@@ -6,6 +6,7 @@
 #include <hyperoute/regex_line.hpp>
 #include <memory>
 #include <vector>
+#include <system_error>
 
 namespace hyperoute::backend
 {
@@ -14,7 +15,7 @@ namespace hyperoute::backend
     class router_backend
     {
     public:
-        virtual void init_router(const std::vector<regex_line_t>& route_regexes) = 0;
+        virtual void init_router(const std::vector<regex_line_t>& route_regexes, std::error_condition& ec) = 0;
         virtual std::unique_ptr<matcher_backend> matcher() = 0;
     };
 

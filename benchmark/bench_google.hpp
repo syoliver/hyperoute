@@ -22,27 +22,28 @@ protected:
         hyperoute::builder builder(backend);
 
         // People
-        builder.add_route("/people/{userId}", hyperoute_empty).methods({"GET"});
-        builder.add_route("/people", hyperoute_empty).methods({"GET"});
-        builder.add_route("/activities/{activityId}/people/{collection}", hyperoute_empty).methods({"GET"});
-        builder.add_route("/people/{userId}/people/{collection}", hyperoute_empty).methods({"GET"});
-        builder.add_route("/people/{userId}/openIdConnect", hyperoute_empty).methods({"GET"});
+        std::error_condition ec;
+        builder.add_route("/people/{userId}"                            , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/people"                                     , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities/{activityId}/people/{collection}", ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}/people/{collection}"        , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}/openIdConnect"              , ec, hyperoute_empty).methods({"GET"});
 
         // Activities
-        builder.add_route("/people/{userId}/activities/{collection}", hyperoute_empty).methods({"GET"});
-        builder.add_route("/activities/{activityId}", hyperoute_empty).methods({"GET"});
-        builder.add_route("/activities", hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}/activities/{collection}"    , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities/{activityId}"                    , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities"                                 , ec, hyperoute_empty).methods({"GET"});
 
         // Comments
-        builder.add_route("/activities/{activityId}/comments", hyperoute_empty).methods({"GET"});
-        builder.add_route("/comments/{commentId}", hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities/{activityId}/comments"           , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/comments/{commentId}"                       , ec, hyperoute_empty).methods({"GET"});
 
         // Moments
-        builder.add_route("/people/{userId}/moments/{collection}", hyperoute_empty).methods({"POST"});
-        builder.add_route("/people/{userId}/moments/{collection}", hyperoute_empty).methods({"GET"});
-        builder.add_route("/moments/{id}", hyperoute_empty).methods({"DELETE"});
+        builder.add_route("/people/{userId}/moments/{collection}"       , ec, hyperoute_empty).methods({"POST"});
+        builder.add_route("/people/{userId}/moments/{collection}"       , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/moments/{id}"                               , ec, hyperoute_empty).methods({"DELETE"});
 
-        r = builder.build();
+        r = builder.build(ec);
     }
 
     void TearDown(const ::benchmark::State& state) BENCHMARK_OVERRIDE

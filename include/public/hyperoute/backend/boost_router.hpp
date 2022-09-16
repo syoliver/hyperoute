@@ -14,7 +14,7 @@ namespace hyperoute::backend
     {
     public:
         virtual ~boost_router();
-        virtual void init_router(const std::vector<regex_line_t>& route_regexes) override;
+        virtual void init_router(const std::vector<regex_line_t>& route_regexes, std::error_condition& ec) override;
         virtual std::unique_ptr<matcher_backend> matcher() override;
 
     private:
