@@ -3,6 +3,7 @@
 #include <error_category.hpp>
 #include <hyperoute/error.hpp>
 #include <sstream>
+#include <iostream>
 
 namespace hyperoute
 {
@@ -15,6 +16,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
 
     auto iter = std::cbegin(route);
     auto token_begin = iter;
+    auto capture_begin = iter;
     const auto end = std::cend(route);
 
     bool in_capture = false;
@@ -33,6 +35,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
             if(in_regex == false && *iter == ':')
             {
                 captures.back().name = std::string_view(token_begin, (iter-token_begin));
+                captures.back().has_regex = true;
                 token_begin = iter+1;
                 in_regex = true;
             }
@@ -49,7 +52,6 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                     {
                         oss_regex << '(' << std::string_view(token_begin, (iter-token_begin)) << ')';
                     }
-
 
                     token_begin = iter+1;
                     in_regex = false;
@@ -103,6 +105,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                         token_begin = iter+1;
                         captures.emplace_back();
                         ++current_group;
+                        captures.back().has_regex = false;
                         captures.back().group = current_group;
                         in_capture = true;
                     }
@@ -159,7 +162,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
     {
         oss_regex << '$';
     }
-
+    
     return std::pair(oss_regex.str(), std::move(captures));
 }
 

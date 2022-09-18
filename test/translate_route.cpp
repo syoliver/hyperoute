@@ -114,11 +114,4 @@ BOOST_DATA_TEST_CASE( translation_failure_brace_not_balanced, boost::unit_test::
     BOOST_TEST((ec == hyperoute::error::unbalanced_brace), "check ec == hyperoute::error::unbalanced_brace has failed [ec == " << ec.message() << "]");
 }
 
-/*
-BOOST_DATA_TEST_CASE( translation_failure_regex_invalid, boost::unit_test::data::make({ true, false }), prefix_mode)
-{
-    std::error_condition ec;
-    const auto result = hyperoute::translate_route("/vehicle/{id:}}", prefix_mode, ec);
-    BOOST_TEST((ec == hyperoute::error::regex_syntax_error), "check ec == hyperoute::error::regex_syntax_error has failed [ec == " << ec.message() << "]");
-}
-*/
+

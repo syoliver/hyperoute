@@ -1,5 +1,5 @@
 #include <hyperoute/backend/hyperscan.hpp>
-#include <hyperoute/backend/hyperscan_router.hpp>
+#include <backend/hyperscan_router.hpp>
 
 namespace hyperoute::backend
 {

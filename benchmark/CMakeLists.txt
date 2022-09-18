@@ -20,6 +20,13 @@ PRIVATE
     benchmark::benchmark
 )
 
+target_include_directories(
+    hyperoute_bench
+PUBLIC
+    ../include/private
+)
+
+
 if(WITH_R3)
     target_include_directories(
         hyperoute_bench

@@ -1,7 +1,7 @@
 #include "benchmark/benchmark.h"
 
-#include <hyperoute/backend/hyperscan_router.hpp>
-#include <hyperoute/backend/boost_router.hpp>
+#include <backend/hyperscan_router.hpp>
+#include <backend/boost_router.hpp>
 #include <hyperoute/route_context.hpp>
 #include <hyperoute/builder.hpp>
 #include <hyperoute/router.hpp>

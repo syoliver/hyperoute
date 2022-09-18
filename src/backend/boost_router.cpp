@@ -1,5 +1,5 @@
-#include <hyperoute/backend/boost_router.hpp>
-#include <hyperoute/backend/boost_matcher.hpp>
+#include <backend/boost_router.hpp>
+#include <backend/boost_matcher.hpp>
 #include <hyperoute/error.hpp>
 #include <numeric>
 #include <sstream>
@@ -83,8 +83,16 @@ static auto generate_whole_regex(const std::vector<regex_line_t>& regexes)
 
     contexts_ = transform_context(route_regexes, ec);
 
-    db_ = std::make_shared<boost::regex>(std::move(whole_regex));
-    if(db_->status() != 0)
+    try
+    {
+        db_ = std::make_shared<boost::regex>(std::move(whole_regex));
+        if(db_->status() != 0)
+        {
+            ec = make_error_condition(error::regex_syntax);
+            db_ = nullptr;
+        }
+    }
+    catch(const std::exception& e)
     {
         ec = make_error_condition(error::regex_syntax);
         db_ = nullptr;

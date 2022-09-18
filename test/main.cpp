@@ -131,3 +131,20 @@ BOOST_DATA_TEST_CASE( add_route_failure_same_param_name, data_test_backends, bac
 
     router->call("GET", "/test/a/b");
 }
+
+
+BOOST_DATA_TEST_CASE( add_route_failure_regex_syntax, data_test_backends, backend )
+{
+    MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
+    hyperoute::builder builder(backend);
+
+    std::error_condition ec;
+    builder.add_route("/test/{name:)(*)}", ec, first_ctx).methods({"GET"});
+    BOOST_TEST(!ec);
+
+    const auto router = builder.build(ec);
+    BOOST_TEST((ec == hyperoute::error::regex_syntax), "check ec == hyperoute::error::duplicate_parameter has failed [ec == " << ec.message() << "]");
+
+    router->call("GET", "/test/a");
+}
+

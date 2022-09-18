@@ -22,6 +22,7 @@ add_library(
     src/error_category.cpp
 
     src/context_params.cpp
+    src/route_trie.cpp
 
     src/backend/hyperscan_router.cpp
     src/backend/hyperscan_matcher.cpp

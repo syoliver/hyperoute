@@ -42,3 +42,24 @@ set_target_properties(translate_route_test PROPERTIES CXX_STANDARD 17)
 
 add_test(NAME translate_route_test COMMAND translate_route_test)
 
+
+#########################################################
+
+add_executable(route_trie_test route_trie.cpp)
+
+target_link_libraries(
+    route_trie_test
+PRIVATE
+    hyperoute
+    Boost::headers
+)
+
+target_include_directories(
+    route_trie_test
+PUBLIC
+    ../include/private
+)
+
+set_target_properties(route_trie_test PROPERTIES CXX_STANDARD 17)
+
+add_test(NAME route_trie_test COMMAND route_trie_test)

@@ -10,6 +10,7 @@ namespace hyperoute
     struct capture_t
     {
         std::string name;
+        bool        has_regex;
         std::size_t group;
     };
 
