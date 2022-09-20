@@ -3,6 +3,7 @@
 #ifndef __HYPEROUTE__BUILDER_H__
 #define __HYPEROUTE__BUILDER_H__
 
+#include <hyperoute/hyperoute_export.hpp>
 #include <hyperoute/router.hpp>
 #include <hyperoute/capture.hpp>
 #include <hyperoute/route_function.hpp>
@@ -23,7 +24,7 @@ namespace hyperoute
         class router_backend;
     }
 
-    class builder
+    class HYPEROUTE_EXPORT builder
     {
     public:
         builder(std::shared_ptr<backend::router_backend> backend);

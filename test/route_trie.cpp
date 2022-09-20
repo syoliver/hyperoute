@@ -9,34 +9,36 @@ BOOST_AUTO_TEST_SUITE(static_routes)
     BOOST_AUTO_TEST_CASE(insert_static_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/a/path", 1));
-        BOOST_TEST(trie.insert("/another/path", 2));
+        BOOST_TEST(trie.insert("^\\/a\\/path$", 1));
+        BOOST_TEST(trie.insert("^\\/another\\/path$", 2));
+
+        trie.print_trie();
 
         auto context = trie.create_search_context();
 
         {
             const auto opt_value = trie.search("/a/path", context);
-            BOOST_TEST(opt_value.has_value());
+            BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 1);
         }
         
         {
             const auto opt_value = trie.search("/another/path", context);
-            BOOST_TEST(opt_value.has_value());
+            BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 2);
         }
 
         {
             const auto opt_value = trie.search("/not/a/path", context);
-            BOOST_TEST(opt_value.has_value() == false);
+            BOOST_TEST_REQUIRE(opt_value.has_value() == false);
         }
     }
 
     BOOST_AUTO_TEST_CASE(insert_dependent_static_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/a", 1));    
-        BOOST_TEST(trie.insert("/a/path", 2));
+        BOOST_TEST(trie.insert("^\\/a$", 1));    
+        BOOST_TEST(trie.insert("^\\/a\\/path$", 2));
 
         auto context = trie.create_search_context();
 
@@ -62,21 +64,21 @@ BOOST_AUTO_TEST_SUITE(static_routes)
     BOOST_AUTO_TEST_CASE(insert_twice_static_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/a", 1));
-        BOOST_TEST(trie.insert("/a", 2) == false);
+        BOOST_TEST(trie.insert("^\\/a$", 1));
+        BOOST_TEST(trie.insert("^\\/a$", 2) == false);
     }
 
     BOOST_AUTO_TEST_CASE(insert_complex_static_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/a/path", 1));
-        BOOST_TEST(trie.insert("/another/path", 2));
-        BOOST_TEST(trie.insert("/second/path", 3));
-        BOOST_TEST(trie.insert("/a/strange/path", 4));
-        BOOST_TEST(trie.insert("/a/path/not/so/strange", 5));
-        BOOST_TEST(trie.insert("/another/strange/path", 6));
-        BOOST_TEST(trie.insert("/_/path", 7));
-        BOOST_TEST(trie.insert("/an/imaginary/path", 8));
+        BOOST_TEST(trie.insert("^\\/a\\/path$", 1));
+        BOOST_TEST(trie.insert("^\\/another\\/path$", 2));
+        BOOST_TEST(trie.insert("^\\/second\\/path$", 3));
+        BOOST_TEST(trie.insert("^\\/a\\/strange\\/path$", 4));
+        BOOST_TEST(trie.insert("^\\/a\\/path\\/not\\/so\\/strange$", 5));
+        BOOST_TEST(trie.insert("^\\/another\\/strange\\/path$", 6));
+        BOOST_TEST(trie.insert("^\\/_\\/path$", 7));
+        BOOST_TEST(trie.insert("^\\/an\\/imaginary\\/path$", 8));
 
         auto context = trie.create_search_context();
 
@@ -112,11 +114,11 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
     BOOST_AUTO_TEST_CASE(insert_matched_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/people/{userId}/moments/{collection}", 1));
-        BOOST_TEST(trie.insert("/people/{userId}", 2));
-        BOOST_TEST(trie.insert("/people", 3));
-        BOOST_TEST(trie.insert("/people/{userId}/people/{collection}", 4));
-        BOOST_TEST(trie.insert("/people/{userId}/openIdConnect", 5));
+        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)\\/moments\\/([^\\/]+)$", 1));
+        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)$", 2));
+        BOOST_TEST(trie.insert("^\\/people$", 3));
+        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/people/([^\\/]+)$", 4));
+        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/openIdConnect", 5));
 
         auto context = trie.create_search_context();
 
@@ -171,8 +173,8 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
     BOOST_AUTO_TEST_CASE(insert_conflicted_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/people/{userId}/a_collection", 1));
-        BOOST_TEST(trie.insert("/people/an_user/{collectionId}", 2));
+        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)\\/a_collection$", 1));
+        BOOST_TEST(trie.insert("^\\/people\\/an_user\\/([^\\/]+)$", 2));
 
         auto context = trie.create_search_context();
 
@@ -213,12 +215,12 @@ BOOST_AUTO_TEST_SUITE(parsing_error)
     BOOST_AUTO_TEST_CASE(insert_invalid_route)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("/people/}/a_collection", 1) == false);
+        BOOST_TEST(trie.insert("^\\/people\\/)\\/a_collection$", 1) == false);
 
-        BOOST_TEST(trie.insert("/aaa{name}", 2) == false);
+        BOOST_TEST(trie.insert("^\\/aaa(name)$", 2) == false);
 
-        BOOST_TEST(trie.insert("/people/{name}aaa", 3) == false);
+        BOOST_TEST(trie.insert("^\\/people\\/(name)aaa$", 3) == false);
 
-        BOOST_TEST(trie.insert("{name}", 4) == false);
+        BOOST_TEST(trie.insert("^(name)$", 4) == false);
     }
 BOOST_AUTO_TEST_SUITE_END()

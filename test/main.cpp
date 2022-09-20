@@ -5,15 +5,49 @@
 
 #include <hyperoute/backend/hyperscan.hpp>
 #include <hyperoute/backend/boost.hpp>
+#include <hyperoute/backend/simple.hpp>
 #include <hyperoute/route_context.hpp>
 #include <hyperoute/builder.hpp>
 #include <hyperoute/router.hpp>
 #include <hyperoute/error.hpp>
 
+const auto regex_test_backends =
+      boost::unit_test::data::make({ "hyperscan"                         , "boost"                          })
+    ^ boost::unit_test::data::make({ hyperoute::backend::make_hyperscan(), hyperoute::backend::make_boost() });
 
-const auto data_test_backends = boost::unit_test::data::make({ hyperoute::backend::make_hyperscan(), hyperoute::backend::make_boost() });
+const auto all_test_backends =
 
-BOOST_DATA_TEST_CASE( route, data_test_backends, backend )
+      boost::unit_test::data::make({ "simple"                         , "hyperscan"                         , "boost"                          })
+    ^ boost::unit_test::data::make({ hyperoute::backend::make_simple(), hyperoute::backend::make_hyperscan(), hyperoute::backend::make_boost() });
+
+BOOST_DATA_TEST_CASE( route, all_test_backends, kind, backend )
+{
+    MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
+    MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
+    MOCK_FUNCTOR(third_ctx, void(const hyperoute::route_context&));
+
+    hyperoute::builder builder(backend);
+    
+    std::error_condition ec;
+    builder.add_route("/vehicle", ec, first_ctx);
+    BOOST_TEST(!ec);
+
+    builder.add_route("/vehicle/{id}", ec, third_ctx);
+    BOOST_TEST(!ec);
+
+    const auto router = builder.build(ec);
+    BOOST_TEST(!ec);
+
+    {
+        MOCK_EXPECT(third_ctx).once().with([](const hyperoute::route_context& ctx){
+            return ctx.params.find("id")->second == "012345.";
+        });
+        router->call("GET", "/vehicle/012345.");
+    }
+}
+
+
+BOOST_DATA_TEST_CASE( route_regex, regex_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
@@ -50,7 +84,8 @@ BOOST_DATA_TEST_CASE( route, data_test_backends, backend )
     }
 }
 
-BOOST_DATA_TEST_CASE( route_prefix, data_test_backends, backend )
+// TODO: Implement prefix in simpe backend
+BOOST_DATA_TEST_CASE( route_prefix, regex_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
@@ -82,7 +117,7 @@ BOOST_DATA_TEST_CASE( route_prefix, data_test_backends, backend )
 }
 
 
-BOOST_DATA_TEST_CASE( route_verb, data_test_backends, backend )
+BOOST_DATA_TEST_CASE( route_verb, regex_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
@@ -117,7 +152,7 @@ BOOST_DATA_TEST_CASE( route_verb, data_test_backends, backend )
 }
 
 
-BOOST_DATA_TEST_CASE( add_route_failure_same_param_name, data_test_backends, backend )
+BOOST_DATA_TEST_CASE( add_route_failure_same_param_name, all_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     hyperoute::builder builder(backend);
@@ -133,7 +168,7 @@ BOOST_DATA_TEST_CASE( add_route_failure_same_param_name, data_test_backends, bac
 }
 
 
-BOOST_DATA_TEST_CASE( add_route_failure_regex_syntax, data_test_backends, backend )
+BOOST_DATA_TEST_CASE( add_route_failure_regex_syntax, regex_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     hyperoute::builder builder(backend);
@@ -143,7 +178,7 @@ BOOST_DATA_TEST_CASE( add_route_failure_regex_syntax, data_test_backends, backen
     BOOST_TEST(!ec);
 
     const auto router = builder.build(ec);
-    BOOST_TEST((ec == hyperoute::error::regex_syntax), "check ec == hyperoute::error::duplicate_parameter has failed [ec == " << ec.message() << "]");
+    BOOST_TEST((ec == hyperoute::error::regex_syntax), "check ec == hyperoute::error::regex_syntax has failed [ec == " << ec.message() << "]");
 
     router->call("GET", "/test/a");
 }

@@ -3,12 +3,13 @@
 #ifndef __HYPEROUTE__CONTEXT_PARAMS_H__
 #define __HYPEROUTE__CONTEXT_PARAMS_H__
 
+#include <hyperoute/hyperoute_export.hpp>
 #include <vector>
 #include <string_view>
 
 namespace hyperoute
 {
-    class context_params final
+    class HYPEROUTE_EXPORT context_params final
     {
     private:
         using node = std::pair<const std::string, std::string_view>;
@@ -41,6 +42,9 @@ namespace hyperoute
         iterator find(const std::string_view key);
         const_iterator find(const std::string_view key) const;
         
+        std::size_t size() const;
+        bool empty() const;
+
         iterator begin();
         const_iterator begin() const;
 

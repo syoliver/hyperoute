@@ -5,7 +5,7 @@
 
 #include <hyperoute/backend/matcher_backend.hpp>
 #include <hyperoute/route_context.hpp>
-#include <boost/regex.hpp>
+#include <route_trie.hpp>
 #include <string_view>
 #include <memory>
 #include <vector>
@@ -13,17 +13,17 @@
 
 namespace hyperoute::backend
 {
-    class boost_matcher : public matcher_backend
+    class simple_matcher : public matcher_backend
     {
     public:
-        boost_matcher(std::shared_ptr<boost::regex> db, std::vector<route_context> contexts, std::shared_ptr<std::vector<std::size_t>> capture_indexes);
-        virtual ~boost_matcher();
+        simple_matcher(std::shared_ptr<hyperoute::route_trie> db, hyperoute::route_trie::search_context search_context, std::vector<route_context> contexts);
+        virtual ~simple_matcher();
         virtual std::optional<matched> match(std::string_view url, const std::vector<route_line_t>& route_lines) override;
 
         route_context& context(std::size_t index);
     private:
-        std::shared_ptr<boost::regex> db_;
-        std::shared_ptr<std::vector<std::size_t>> capture_indexes_;
+        std::shared_ptr<hyperoute::route_trie> db_;
+        hyperoute::route_trie::search_context search_context_;
         std::vector<route_context> contexts_;
     };
 

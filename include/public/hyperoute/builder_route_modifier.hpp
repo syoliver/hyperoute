@@ -3,13 +3,14 @@
 #ifndef __HYPEROUTE__BUILDER_ROUTE_MODIFIER_H__
 #define __HYPEROUTE__BUILDER_ROUTE_MODIFIER_H__
 
+#include <hyperoute/hyperoute_export.hpp>
 #include <string>
 
 namespace hyperoute
 {
     class builder;
 
-    class builder_route_modifier
+    class HYPEROUTE_EXPORT builder_route_modifier
     {
     private:
         friend class builder;

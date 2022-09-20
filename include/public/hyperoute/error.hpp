@@ -3,6 +3,7 @@
 #ifndef __HYPEROUTE__ERROR_H__
 #define __HYPEROUTE__ERROR_H__
 
+#include <hyperoute/hyperoute_export.hpp>
 #include <system_error>
 
 namespace hyperoute
@@ -17,7 +18,7 @@ namespace hyperoute
         duplicate_parameter
     };
 
-    std::error_condition make_error_condition(::hyperoute::error err) noexcept;
+    HYPEROUTE_EXPORT std::error_condition make_error_condition(::hyperoute::error err) noexcept;
 }
 
 namespace std

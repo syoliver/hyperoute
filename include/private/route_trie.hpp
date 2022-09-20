@@ -35,9 +35,13 @@ namespace hyperoute
     class route_trie
     {
     public:
-        struct search_context
+        struct search_context final
         {
         public:
+            search_context();
+            search_context(const search_context& other);
+            search_context(search_context&& other);
+
             ~search_context();
 
             std::vector<std::string_view> captures;

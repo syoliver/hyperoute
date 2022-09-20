@@ -10,7 +10,7 @@ static void hyperoute_empty(const hyperoute::route_context&)
 
 }
 
-template<typename Backend>
+template<std::shared_ptr<hyperoute::backend::router_backend> BackendFactory()>
 class Google_HyperouteBenchmark : public ::benchmark::Fixture
 {
 protected:
@@ -18,7 +18,7 @@ protected:
 
     void SetUp(const ::benchmark::State& state) BENCHMARK_OVERRIDE
     {
-        auto backend = std::make_shared<Backend>();
+        auto backend = BackendFactory();
         hyperoute::builder builder(backend);
 
         // People
@@ -90,12 +90,18 @@ protected:
     }
 };
 
-BENCHMARK_TEMPLATE_F(Google_HyperouteBenchmark, Hyperouter_Hyperscan, hyperoute::backend::hyperscan_router)(benchmark::State& st)
+
+BENCHMARK_TEMPLATE_F(Google_HyperouteBenchmark, Hyperouter_Simple, &hyperoute::backend::make_simple)(benchmark::State& st)
 {
     Execute(st);
 }
 
-BENCHMARK_TEMPLATE_F(Google_HyperouteBenchmark, Hyperouter_Boost, hyperoute::backend::boost_router)(benchmark::State& st)
+BENCHMARK_TEMPLATE_F(Google_HyperouteBenchmark, Hyperouter_Hyperscan, &hyperoute::backend::make_hyperscan)(benchmark::State& st)
+{
+    Execute(st);
+}
+
+BENCHMARK_TEMPLATE_F(Google_HyperouteBenchmark, Hyperouter_Boost, &hyperoute::backend::make_boost)(benchmark::State& st)
 {
     Execute(st);
 }

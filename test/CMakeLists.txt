@@ -23,12 +23,29 @@ add_test(NAME hyperoute_test COMMAND hyperoute_test)
 
 #########################################################
 
+add_executable(context_params_test context_params.cpp)
+
+target_link_libraries(
+    context_params_test
+PRIVATE
+    hyperoute
+    Boost::headers
+)
+
+
+set_target_properties(context_params_test PROPERTIES CXX_STANDARD 17)
+
+add_test(NAME context_params_test COMMAND context_params_test)
+
+#########################################################
+
 add_executable(translate_route_test translate_route.cpp)
 
 target_link_libraries(
     translate_route_test
 PRIVATE
-    hyperoute
+    hyperoute_translate
+    hyperoute_error
     Boost::headers
 )
 
@@ -50,7 +67,8 @@ add_executable(route_trie_test route_trie.cpp)
 target_link_libraries(
     route_trie_test
 PRIVATE
-    hyperoute
+    hyperoute_trie
+    hyperoute_error
     Boost::headers
 )
 
@@ -63,3 +81,20 @@ PUBLIC
 set_target_properties(route_trie_test PROPERTIES CXX_STANDARD 17)
 
 add_test(NAME route_trie_test COMMAND route_trie_test)
+
+
+#########################################################
+
+add_executable(google_api_test google_api.cpp)
+
+target_link_libraries(
+    google_api_test
+PRIVATE
+    hyperoute
+    Boost::headers
+    turtle::turtle
+)
+
+set_target_properties(google_api_test PROPERTIES CXX_STANDARD 17)
+
+add_test(NAME google_api_test COMMAND google_api_test)

@@ -1,6 +1,7 @@
 
 #include <route_trie.hpp>
 #include <string_view>
+#include <sstream>
 #include <iostream>
 
 namespace hyperoute
@@ -21,6 +22,10 @@ namespace details
 }
 
 route_trie::search_context::~search_context() = default;
+
+route_trie::search_context::search_context() = default;
+route_trie::search_context::search_context(const search_context& other) = default;
+route_trie::search_context::search_context(search_context&& other) = default;
 
 std::size_t route_trie::search_context::backtracking_depth() const
 {
@@ -64,7 +69,7 @@ static std::pair<iterator, iterator> next_match(bool valid_match_preceding, iter
             {
                 want_match_preceding = true;
             }
-            else if(*iter == '{')
+            else if(*iter == '(')
             {
                 if(valid_match_preceding == false)
                 {
@@ -74,7 +79,7 @@ static std::pair<iterator, iterator> next_match(bool valid_match_preceding, iter
                 begin_match = iter;
                 begin_found = true;
             }
-            else if(*iter == '}')
+            else if(*iter == ')')
             {
                 if(begin_found == false)
                 {
@@ -252,76 +257,134 @@ static details::trie_data* insert_in_node_match(details::trie_node* node, iterat
 }
 
 
-static bool validate_route(std::string_view::const_iterator iter_validation, std::string_view::const_iterator iter_end)
+static std::optional<std::string> sanitize_route(std::string_view route, bool& matching_route_prefix)
 {
+    std::ostringstream oss;
+
+    std::string_view::const_iterator iter_begin = std::begin(route);
+    std::string_view::const_iterator iter_end = std::end(route);
+
     bool valid_match_preceding = false;
     bool in_match = false;
     bool skip = false;
+
+    matching_route_prefix = true;
+
+    if(iter_begin == iter_end || *iter_begin != '^') return std::nullopt;
+    ++iter_begin;
+
+    auto iter_validation = iter_begin;
+    std::string_view::const_iterator iter_begin_capture;
+
     while(iter_validation != iter_end)
     {
         if(skip == false)
         {
             switch(*iter_validation)
             {
-                case '{':
+                case '(':
                 {
-                    if(valid_match_preceding == false) return false;
-                    if(in_match) return false;
+                    if(valid_match_preceding == false) return std::nullopt;
+                    if(in_match) return std::nullopt;
                     in_match = true;
+                    iter_begin_capture = iter_validation;
+                    oss << '(';
                     break;
                 }
-                case '}':
+                case ')':
                 {
-                    if(in_match == false) return false;
-                    if(std::next(iter_validation)==iter_end) return true;
-                    if(*std::next(iter_validation) != '/') return false;
+                    if(in_match == false) return std::nullopt;
+                    if((std::next(iter_validation)==iter_end) || (*std::next(iter_validation) == '$' && std::next(std::next(iter_validation)) == iter_end))
+                    {
+                        oss << ')';
+                        return oss.str();
+                    }
+                    
+                    if(*std::next(iter_validation) != '/')
+                    {
+
+                        if(*std::next(iter_validation) == '\\' && std::next(std::next(iter_validation)) != iter_end && *std::next(std::next(iter_validation)) == '/')
+                        {
+                            // OK continue....
+                        }
+                        else
+                        {
+                            return std::nullopt;
+                        }
+                    }
+
+                    if(std::string_view(iter_begin_capture, (iter_validation-iter_begin_capture)) != "([^\\/]+") return std::nullopt;
                     in_match = false;
+                    oss << ')';
                     break;
                 }
                 case '/':
                 {
-                    if(in_match) return false;
-                    valid_match_preceding = true;
+                    if(in_match == false)
+                    {
+                        valid_match_preceding = true;
+                        oss << '/';
+                    }
                     break;
                 }
+                case '$':
+                    if(in_match) return std::nullopt;
+                    if(skip == false && (std::next(iter_validation) != iter_end)) return std::nullopt;
+                    matching_route_prefix = true;
+                    break;
                 case '\\':
                 {
                     skip = true;
+                    break;
                 }
                 default:
                 {
                     valid_match_preceding = false;
                     skip = false;
+                    if(in_match == false)
+                    {
+                        oss << *iter_validation;
+                    }
                 }
             }
         }
         else
         {
+            if(in_match == false)
+            {
+                if(*iter_validation == '/')
+                {
+                    valid_match_preceding = true;
+                }
+
+                oss << *iter_validation;
+            }
             skip = false;
         }
         ++iter_validation;
     }
-    return true;
+    return oss.str();
 }
 
 bool route_trie::insert(const std::string_view route, const std::size_t route_index)
 {
-    auto iter_route = std::begin(route);
-    auto iter_end = std::end(route);
-
-    auto iter_match = iter_route;
-    
     details::trie_node* node = &root_.node;
     details::trie_data* node_data = nullptr;
     
+    bool matching_route_prefix = false;
+    const auto sanitized_route = sanitize_route(route, matching_route_prefix);
 
-
-    if(validate_route(iter_route, iter_end) == false)
+    if(sanitized_route.has_value() == false)
     {
         return false;
     }
 
+    std::string_view sanitized_route_view(*sanitized_route);
+    auto iter_route = std::begin(sanitized_route_view);
+    auto iter_end = std::end(sanitized_route_view);
 
+    auto iter_match = iter_route;
+    
     bool valid_match_preceding = false;
     while(true)
     {

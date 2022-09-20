@@ -3,7 +3,7 @@
 #ifndef __HYPEROUTE__ROUTER_H__
 #define __HYPEROUTE__ROUTER_H__
 
-
+#include <hyperoute/hyperoute_export.hpp>
 #include <hyperoute/capture.hpp>
 #include <hyperoute/route_function.hpp>
 #include <hyperoute/route_line.hpp>
@@ -21,7 +21,7 @@ namespace hyperoute
     }
 
 
-    class router
+    class HYPEROUTE_EXPORT router
     {
     public:
         router(router&&);

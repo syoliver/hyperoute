@@ -1,6 +1,7 @@
 
 #include <hyperoute/context_params.hpp>
 #include <boost/container_hash/hash.hpp>
+#include <iostream>
 
 namespace hyperoute
 {
@@ -83,7 +84,6 @@ namespace hyperoute
         static const boost::hash<std::string_view> hasher;
 
         const auto search_hash = hasher(key);
-
         return inner_find(key, search_hash);
     }
 
@@ -110,6 +110,15 @@ namespace hyperoute
         return std::end(nodes_);
     }
 
+    std::size_t context_params::size() const
+    {
+        return nodes_.size();
+    }
+
+    bool context_params::empty() const
+    {
+        return nodes_.empty();
+    }
 
     context_params::iterator context_params::inner_find(const std::string_view key, const std::size_t search_hash)
     {
@@ -126,7 +135,7 @@ namespace hyperoute
         {
             if(nodes_[iter->second].first == key)
             {
-                return std::begin(nodes_) + (iter - std::begin(hashs_));
+                return std::begin(nodes_) + iter->second;
             }
             ++iter;
         }
