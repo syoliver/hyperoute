@@ -84,8 +84,7 @@ BOOST_DATA_TEST_CASE( route_regex, regex_test_backends, kind, backend )
     }
 }
 
-// TODO: Implement prefix in simpe backend
-BOOST_DATA_TEST_CASE( route_prefix, regex_test_backends, kind, backend )
+BOOST_DATA_TEST_CASE( route_prefix, all_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));
@@ -117,7 +116,7 @@ BOOST_DATA_TEST_CASE( route_prefix, regex_test_backends, kind, backend )
 }
 
 
-BOOST_DATA_TEST_CASE( route_verb, regex_test_backends, kind, backend )
+BOOST_DATA_TEST_CASE( route_verb, all_test_backends, kind, backend )
 {
     MOCK_FUNCTOR(first_ctx, void(const hyperoute::route_context&));
     MOCK_FUNCTOR(second_ctx, void(const hyperoute::route_context&));

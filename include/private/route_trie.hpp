@@ -26,6 +26,7 @@ namespace hyperoute
         struct trie_data
         {
             std::size_t route_index = 0;
+            bool is_route_prefix = false;
             trie_node node;
         };
 
@@ -45,6 +46,7 @@ namespace hyperoute
             ~search_context();
 
             std::vector<std::string_view> captures;
+            std::size_t match_end;
 
             std::size_t backtracking_depth() const;
 

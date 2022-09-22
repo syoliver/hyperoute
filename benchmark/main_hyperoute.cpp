@@ -16,5 +16,6 @@
 #include <iostream>
 
 #include "bench_google.hpp"
+#include "bench_github.hpp"
 
 BENCHMARK_MAIN();

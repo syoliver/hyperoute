@@ -4,6 +4,100 @@
 
 #include <route_trie.hpp>
 
+BOOST_AUTO_TEST_SUITE(route_prefix)
+
+    BOOST_AUTO_TEST_CASE(insert_static_routes)
+    {
+        hyperoute::route_trie trie;
+        BOOST_TEST(trie.insert("^\\/a\\/path", 1));
+        BOOST_TEST(trie.insert("^\\/another\\/path", 2));
+
+        trie.print_trie();
+
+        auto context = trie.create_search_context();
+
+        {
+            const auto opt_value = trie.search("/a/path/with/a/suffix", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value());
+            BOOST_TEST(*opt_value == 1);
+            BOOST_TEST(context.match_end == std::strlen("/a/path"));
+        }
+        
+        {
+            const auto opt_value = trie.search("/another/path", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value());
+            BOOST_TEST(*opt_value == 2);
+            BOOST_TEST(context.match_end == std::strlen("/another/path"));
+        }
+
+        {
+            const auto opt_value = trie.search("/not/a/path", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value() == false);
+        }
+    }
+
+
+    BOOST_AUTO_TEST_CASE(insert_static_before_prefix)
+    {
+        hyperoute::route_trie trie;
+        BOOST_TEST(trie.insert("^\\/a\\/path", 1));
+        BOOST_TEST(trie.insert("^\\/a\\/path\\//with\\/a\\/suffix$", 2));
+
+        trie.print_trie();
+
+        auto context = trie.create_search_context();
+
+        {
+            const auto opt_value = trie.search("/a/path/with/a/suffix", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value());
+            BOOST_TEST(*opt_value == 1);
+            BOOST_TEST(context.match_end == std::strlen("/a/path"));
+        }
+        
+        {
+            const auto opt_value = trie.search("/a/path/with/another/suffix", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value());
+            BOOST_TEST(*opt_value == 1);
+            BOOST_TEST(context.match_end == std::strlen("/a/path"));
+        }
+
+        {
+            const auto opt_value = trie.search("/not/a/path", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value() == false);
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE(insert_prefix_before_static)
+    {
+        hyperoute::route_trie trie;
+        BOOST_TEST(trie.insert("^\\/a\\/path\\/with\\/a\\/suffix$", 1));
+        BOOST_TEST(trie.insert("^\\/a\\/path", 2));
+
+        trie.print_trie();
+
+        auto context = trie.create_search_context();
+
+        {
+            const auto opt_value = trie.search("/a/path/with/a/suffix", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value());
+            BOOST_TEST(*opt_value == 1);
+            BOOST_TEST(context.match_end == std::strlen("/a/path/with/a/suffix"));
+        }
+        
+        {
+            const auto opt_value = trie.search("/a/path/with/another/suffix", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value());
+            BOOST_TEST(*opt_value == 2);
+            BOOST_TEST(context.match_end == std::strlen("/a/path"));
+        }
+
+        {
+            const auto opt_value = trie.search("/not/a/path", context);
+            BOOST_TEST_REQUIRE(opt_value.has_value() == false);
+        }
+    }
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(static_routes)
 
     BOOST_AUTO_TEST_CASE(insert_static_routes)
@@ -118,7 +212,7 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
         BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)$", 2));
         BOOST_TEST(trie.insert("^\\/people$", 3));
         BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/people/([^\\/]+)$", 4));
-        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/openIdConnect", 5));
+        BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/openIdConnect$", 5));
 
         auto context = trie.create_search_context();
 

@@ -5,7 +5,7 @@
 
 // https://github.com/julienschmidt/go-http-routing-benchmark/blob/master/gplus_test.go
 
-static void hyperoute_empty(const hyperoute::route_context&)
+static void google_hyperoute_empty(const hyperoute::route_context&)
 {
 
 }
@@ -23,25 +23,25 @@ protected:
 
         // People
         std::error_condition ec;
-        builder.add_route("/people/{userId}"                            , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/people"                                     , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/activities/{activityId}/people/{collection}", ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/people/{userId}/people/{collection}"        , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/people/{userId}/openIdConnect"              , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}"                            , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/people"                                     , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities/{activityId}/people/{collection}", ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}/people/{collection}"        , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}/openIdConnect"              , ec, google_hyperoute_empty).methods({"GET"});
 
         // Activities
-        builder.add_route("/people/{userId}/activities/{collection}"    , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/activities/{activityId}"                    , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/activities"                                 , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/people/{userId}/activities/{collection}"    , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities/{activityId}"                    , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities"                                 , ec, google_hyperoute_empty).methods({"GET"});
 
         // Comments
-        builder.add_route("/activities/{activityId}/comments"           , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/comments/{commentId}"                       , ec, hyperoute_empty).methods({"GET"});
+        builder.add_route("/activities/{activityId}/comments"           , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/comments/{commentId}"                       , ec, google_hyperoute_empty).methods({"GET"});
 
         // Moments
-        builder.add_route("/people/{userId}/moments/{collection}"       , ec, hyperoute_empty).methods({"POST"});
-        builder.add_route("/people/{userId}/moments/{collection}"       , ec, hyperoute_empty).methods({"GET"});
-        builder.add_route("/moments/{id}"                               , ec, hyperoute_empty).methods({"DELETE"});
+        builder.add_route("/people/{userId}/moments/{collection}"       , ec, google_hyperoute_empty).methods({"POST"});
+        builder.add_route("/people/{userId}/moments/{collection}"       , ec, google_hyperoute_empty).methods({"GET"});
+        builder.add_route("/moments/{id}"                               , ec, google_hyperoute_empty).methods({"DELETE"});
 
         r = builder.build(ec);
     }

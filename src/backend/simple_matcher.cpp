@@ -19,18 +19,20 @@ namespace hyperoute::backend
         {
             const auto context_index = *match - 1;
 
-            auto& context = contexts_[context_index];
+            auto& matched_context = contexts_[context_index];
             
-            auto iter = std::begin(context.params);
+            auto iter = std::begin(matched_context.params);
             for(const auto& capture: search_context_.captures)
             {
                 iter->second = capture;
                 ++iter;
             }
 
+            matched_context.matched_path = path.substr(0, search_context_.match_end);
+            matched_context.remaining_path = path.substr(search_context_.match_end);
             
             return matched{
-                .context = contexts_[context_index],
+                .context = matched_context,
                 .func = route_lines[context_index].func
             };
         }

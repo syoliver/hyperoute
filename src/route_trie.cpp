@@ -23,7 +23,11 @@ namespace details
 
 route_trie::search_context::~search_context() = default;
 
-route_trie::search_context::search_context() = default;
+route_trie::search_context::search_context()
+    : match_end(0)
+{
+}
+
 route_trie::search_context::search_context(const search_context& other) = default;
 route_trie::search_context::search_context(search_context&& other) = default;
 
@@ -37,14 +41,14 @@ static void do_print_trie(const details::trie_node* node, std::size_t ident = 0)
     for(const auto& node: node->statics)
     {
         for(std::size_t i = 0 ; i < ident ; ++i) std::cout << "-";
-        std::cout << "[" << node.second.route_index << "]: " << node.first << std::endl;
+        std::cout << "[" << (node.second.is_route_prefix ? "*":"") << node.second.route_index <<  "]: " << node.first << std::endl;
         do_print_trie(&node.second.node, ident+1);
     }
 
     for(const auto& node: node->matches)
     {
         for(std::size_t i = 0 ; i < ident ; ++i) std::cout << "-";
-        std::cout << "[" << node.route_index << "]: <MATCH>"  << std::endl;
+        std::cout << "[" << (node.is_route_prefix ? "*":"") << node.route_index << "]: <MATCH>"  << std::endl;
         do_print_trie(&node.node, ident+1);
     }
 }
@@ -294,12 +298,19 @@ static std::optional<std::string> sanitize_route(std::string_view route, bool& m
                 case ')':
                 {
                     if(in_match == false) return std::nullopt;
-                    if((std::next(iter_validation)==iter_end) || (*std::next(iter_validation) == '$' && std::next(std::next(iter_validation)) == iter_end))
+                    if((std::next(iter_validation)==iter_end))
                     {
                         oss << ')';
                         return oss.str();
                     }
                     
+                    if(*std::next(iter_validation) == '$' && std::next(std::next(iter_validation)) == iter_end)
+                    {
+                        matching_route_prefix = false;
+                        oss << ')';
+                        return oss.str();
+                    }
+                     
                     if(*std::next(iter_validation) != '/')
                     {
 
@@ -330,7 +341,7 @@ static std::optional<std::string> sanitize_route(std::string_view route, bool& m
                 case '$':
                     if(in_match) return std::nullopt;
                     if(skip == false && (std::next(iter_validation) != iter_end)) return std::nullopt;
-                    matching_route_prefix = true;
+                    matching_route_prefix = false;
                     break;
                 case '\\':
                 {
@@ -417,6 +428,7 @@ bool route_trie::insert(const std::string_view route, const std::size_t route_in
     if(node_data != nullptr && node_data->route_index == 0)
     {
         node_data->route_index = route_index;
+        node_data->is_route_prefix = matching_route_prefix;
         return true;
     }
 
@@ -534,7 +546,8 @@ std::optional<std::size_t> route_trie::search(const std::string_view value, sear
     context.pending_captures.clear();
     context.backtracking_stack.clear();
 
-    auto iter = std::begin(value);
+    auto iter_begin = std::begin(value);
+    auto iter = iter_begin;
     auto iter_end = std::end(value);
 
     const auto* node_data = &root_;
@@ -546,14 +559,22 @@ std::optional<std::size_t> route_trie::search(const std::string_view value, sear
     {
         std::tie(node_data, backtracking_mode, iter) = search_in_node(node_data, backtracking_mode, iter, iter_end, context.pending_captures, context.backtracking_stack);
 
-        if((iter == iter_end) && (node_data != nullptr) && node_data->route_index < current_route_index)
+        if((node_data != nullptr) && node_data->route_index < current_route_index)
         {
-            if(node_data->route_index > 0)
+            if((iter == iter_end) && (node_data->is_route_prefix == false) || (node_data->is_route_prefix))
             {
-                current_route_index = node_data->route_index;
-                context.captures = context.pending_captures;
+                if(node_data->route_index > 0)
+                {
+                    current_route_index = node_data->route_index;
+                    context.captures = context.pending_captures;
+                    context.match_end = (iter - iter_begin);
+                }
             }
-            backtracking_mode = true;
+
+            if(iter == iter_end)
+            {
+                backtracking_mode = true;
+            }
         }
 
     } while((node_data != nullptr) && (context.backtracking_stack.empty() == false || backtracking_mode == false));
