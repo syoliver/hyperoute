@@ -40,7 +40,7 @@ namespace hyperoute::backend
                     if(matcher[match_subindex].matched)
                     {
                         const auto count = matcher[match_subindex].second - matcher[match_subindex].first;
-                        iter_params->second = std::string_view(matcher[match_subindex].first, count);
+                        iter_params->second = std::string_view(&*matcher[match_subindex].first, count);
 
                     }
                     else
@@ -50,9 +50,23 @@ namespace hyperoute::backend
                 }
 
                 const auto prefix_count = matcher[*iter+1].second - matcher[*iter+1].first;
-                matched_context.matched_path = std::string_view(matcher[*iter+1].first, prefix_count);
-                matched_context.remaining_path = std::string_view(matcher[*iter+1].second, path.size()-prefix_count);
-
+                if(prefix_count != 0)
+                {
+                    matched_context.matched_path = std::string_view(&*matcher[*iter + 1].first, prefix_count);
+                }
+                else
+                {
+                    matched_context.matched_path = std::string_view{};
+                }
+                
+                if(path.size() != prefix_count)
+                {
+                    matched_context.remaining_path = std::string_view(&*matcher[*iter + 1].second, path.size() - prefix_count);
+                }
+                else
+                {
+                    matched_context.remaining_path = std::string_view{};
+                }
 
                 return matched{
                     .context = contexts_[context_index],

@@ -34,7 +34,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
         {
             if(in_regex == false && *iter == ':')
             {
-                captures.back().name = std::string_view(token_begin, (iter-token_begin));
+                captures.back().name = std::string_view(&*token_begin, (iter-token_begin));
                 captures.back().has_regex = true;
                 token_begin = iter+1;
                 in_regex = true;
@@ -45,12 +45,12 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                 {
                     if(captures.back().name.empty())
                     {
-                        captures.back().name = std::string_view(token_begin, (iter-token_begin));
+                        captures.back().name = std::string_view(&*token_begin, (iter-token_begin));
                         oss_regex << "([^\\/]+)";
                     }
                     else
                     {
-                        oss_regex << '(' << std::string_view(token_begin, (iter-token_begin)) << ')';
+                        oss_regex << '(' << std::string_view(&*token_begin, (iter-token_begin)) << ')';
                     }
 
                     token_begin = iter+1;
@@ -101,7 +101,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                     }
                     else
                     {
-                        oss_regex << std::string_view(token_begin, (iter-token_begin));
+                        oss_regex << std::string_view(&*token_begin, (iter-token_begin));
                         token_begin = iter+1;
                         captures.emplace_back();
                         ++current_group;
@@ -138,7 +138,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                 case '+':
                 case '^':
                 {
-                    oss_regex << std::string_view(token_begin, (iter-token_begin));
+                    oss_regex << std::string_view(&*token_begin, (iter-token_begin));
                     oss_regex << '\\';
                     token_begin = iter;
                     break;
@@ -156,8 +156,11 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
         ec = make_error_condition(error::unbalanced_brace);
     }
 
-    oss_regex << std::string_view(token_begin, (iter-token_begin));
-    
+    if(iter != token_begin)
+    {
+        oss_regex << std::string_view(&*token_begin, (iter - token_begin));
+    }
+
     if(prefix_mode == false)
     {
         oss_regex << '$';

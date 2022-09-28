@@ -6,7 +6,16 @@
 #include <hyperoute/route_context.hpp>
 #include <hyperoute/builder.hpp>
 #include <hyperoute/router.hpp>
-#include <valgrind/callgrind.h>
+
+#ifdef VALGRIND_BENCHMARK
+#	include <valgrind/callgrind.h>
+#else
+#	define CALLGRIND_START_INSTRUMENTATION
+#	define CALLGRIND_STOP_INSTRUMENTATION
+#	define CALLGRIND_TOGGLE_COLLECT
+#	define CALLGRIND_TOGGLE_COLLECT
+#endif
+
 #ifdef WITH_R3
 #   include <r3.h>
 #endif

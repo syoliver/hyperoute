@@ -21,6 +21,7 @@ namespace hyperoute::backend
     class matcher_backend
     {
     public:
+        virtual ~matcher_backend();
         virtual std::optional<matched> match(std::string_view url, const std::vector<route_line_t>& route_lines) = 0;
     };
 

@@ -16,7 +16,12 @@ PRIVATE
     turtle::turtle
 )
 
-set_target_properties(hyperoute_test PROPERTIES CXX_STANDARD 17)
+target_compile_definitions(
+    hyperoute_test
+PUBLIC
+    _CRTDBG_MAP_ALLOC
+)
+set_target_properties(hyperoute_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME hyperoute_test COMMAND hyperoute_test)
 
@@ -33,7 +38,7 @@ PRIVATE
 )
 
 
-set_target_properties(context_params_test PROPERTIES CXX_STANDARD 17)
+set_target_properties(context_params_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME context_params_test COMMAND context_params_test)
 
@@ -55,7 +60,7 @@ PUBLIC
     ../include/private
 )
 
-set_target_properties(translate_route_test PROPERTIES CXX_STANDARD 17)
+set_target_properties(translate_route_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME translate_route_test COMMAND translate_route_test)
 
@@ -78,7 +83,7 @@ PUBLIC
     ../include/private
 )
 
-set_target_properties(route_trie_test PROPERTIES CXX_STANDARD 17)
+set_target_properties(route_trie_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME route_trie_test COMMAND route_trie_test)
 
@@ -95,6 +100,6 @@ PRIVATE
     turtle::turtle
 )
 
-set_target_properties(google_api_test PROPERTIES CXX_STANDARD 17)
+set_target_properties(google_api_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME google_api_test COMMAND google_api_test)

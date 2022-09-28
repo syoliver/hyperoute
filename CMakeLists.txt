@@ -28,6 +28,9 @@ add_library(
     
     src/context_params.cpp
 
+    src/backend/router_backend.cpp
+    src/backend/matcher_backend.cpp
+
     src/backend/hyperscan_router.cpp
     src/backend/hyperscan_matcher.cpp
     src/backend/hyperscan.cpp
@@ -76,9 +79,14 @@ PRIVATE
     include/private
 )
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(HYPEROUTE_CXX_STANDARD 20)
+else()
+    set(HYPEROUTE_CXX_STANDARD 17)
+endif()
 
 
-set_target_properties(hyperoute PROPERTIES CXX_STANDARD 17)
+set_target_properties(hyperoute PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if(${CMAKE_VERSION} VERSION_LESS "3.14" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
@@ -112,7 +120,7 @@ PRIVATE
 )
 
 set_target_properties(hyperoute_error PROPERTIES CXX_STANDARD              17
-                                                     POSITION_INDEPENDENT_CODE ON)
+                                                 POSITION_INDEPENDENT_CODE ON)
 
 #####################################################################
 
@@ -135,7 +143,7 @@ PRIVATE
     include/private
 )
 
-set_target_properties(hyperoute_translate PROPERTIES CXX_STANDARD              17
+set_target_properties(hyperoute_translate PROPERTIES CXX_STANDARD              ${HYPEROUTE_CXX_STANDARD}
                                                      POSITION_INDEPENDENT_CODE ON)
 
 #####################################################################
@@ -158,7 +166,7 @@ PRIVATE
     include/private
 )
 
-set_target_properties(hyperoute_trie PROPERTIES CXX_STANDARD 17
+set_target_properties(hyperoute_trie PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD}
                                                 POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(

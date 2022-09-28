@@ -45,7 +45,7 @@ namespace hyperoute
     public:
         void call(std::string_view verb, std::string_view url) const;
         router& operator=(const router&) = delete;
-        router& operator=(router&&);
+        router& operator=(router&&) noexcept;
 
     private:
         std::vector<std::uint8_t> index_;

@@ -6,6 +6,7 @@
 #include <hyperoute/builder_route_modifier.hpp>
 #include <numeric>
 #include <iostream>
+#include <algorithm>
 
 namespace hyperoute
 {
@@ -17,7 +18,7 @@ namespace hyperoute
 
     builder_route_modifier builder::add_route(std::string_view route, std::error_condition& ec, const route_function_t& callback)
     {
-        const auto&[regex, captures] = translate_route(route, false, ec);
+        auto[regex, captures] = translate_route(route, false, ec);
 
         lines_.emplace_back(
             regex_line_t{

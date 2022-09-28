@@ -1,6 +1,7 @@
 #include <hyperoute/router.hpp>
 #include <hyperoute/backend/matcher_backend.hpp>
 #include <boost/container_hash/hash.hpp>
+#include <algorithm>
 
 namespace hyperoute
 {
@@ -26,10 +27,11 @@ router::router(std::vector<verb_route_lines_context_t> route_lines)
 
 router::~router() = default;
 
-router& router::operator=(router&& other)
+router& router::operator=(router&& other) noexcept
 {
     std::swap(route_lines_, other.route_lines_);
     std::swap(index_, other.index_);
+    return *this;
 }
 
 void router::call(const std::string_view verb, const std::string_view url) const

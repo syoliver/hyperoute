@@ -4,6 +4,7 @@
 #include <hyperoute/error.hpp>
 #include <numeric>
 #include <sstream>
+#include <algorithm>
 #include <iostream>
 
 namespace hyperoute::backend

@@ -2,6 +2,7 @@
 #include <hyperoute/context_params.hpp>
 #include <boost/container_hash/hash.hpp>
 #include <iostream>
+#include <algorithm>
 
 namespace hyperoute
 {

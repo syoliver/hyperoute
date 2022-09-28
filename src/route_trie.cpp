@@ -3,6 +3,7 @@
 #include <string_view>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 namespace hyperoute
 {
@@ -169,7 +170,7 @@ static std::tuple<details::trie_data*, iterator> find_prefix_in_node(details::tr
 
     if(iter_statics_begin == iter_statics_end)
     {
-        const std::string_view new_node_prefix(iter_begin, (iter_end-iter_begin));
+        const std::string_view new_node_prefix(&*iter_begin, (iter_end-iter_begin));
         
         auto iter_where = std::upper_bound(
             std::begin(node->statics),
@@ -201,8 +202,11 @@ static std::tuple<details::trie_data*, iterator> find_prefix_in_node(details::tr
             std::swap(new_node_data, iter_statics_begin->second);
             details::trie_node& parent_node = iter_statics_begin->second.node;
 
-            const std::string_view new_node_prefix(iter_begin, (iter - iter_begin));
-            const std::string_view new_node_suffix(iter, (iter_end - iter));
+            const std::string_view new_node_prefix =
+                (iter == iter_begin) ? std::string_view{}:std::string_view(&*iter_begin, (iter - iter_begin));
+
+            const std::string_view new_node_suffix =
+                (iter == iter_end) ? std::string_view{}: std::string_view(&*iter, (iter_end - iter));
             
             parent_node.statics.emplace_back(iter_statics_begin->first.substr(index), std::move(new_node_data));
             iter_statics_begin->first = new_node_prefix;
@@ -218,8 +222,8 @@ static std::tuple<details::trie_data*, iterator> find_prefix_in_node(details::tr
 
             details::trie_node& parent_node = iter_statics_begin->second.node;
 
-            const std::string_view new_node_prefix(iter_begin, (iter - iter_begin));
-            const std::string_view new_node_suffix(iter, (iter_end - iter));
+            const std::string_view new_node_prefix(&*iter_begin, (iter - iter_begin));
+            const std::string_view new_node_suffix(&*iter, (iter_end - iter));
 
             parent_node.statics.emplace_back(iter_statics_begin->first.substr(index), std::move(new_node_data));
 
@@ -324,7 +328,7 @@ static std::optional<std::string> sanitize_route(std::string_view route, bool& m
                         }
                     }
 
-                    if(std::string_view(iter_begin_capture, (iter_validation-iter_begin_capture)) != "([^\\/]+") return std::nullopt;
+                    if(std::string_view(&*iter_begin_capture, (iter_validation-iter_begin_capture)) != "([^\\/]+") return std::nullopt;
                     in_match = false;
                     oss << ')';
                     break;
@@ -458,7 +462,7 @@ static std::tuple<const details::trie_data*, bool, iterator> search_in_node(cons
             const auto iter_begin = backtracking.iterator;
             while((backtracking.iterator != iter_end) && (*backtracking.iterator != '/')) ++backtracking.iterator;
         
-            captures.emplace_back(iter_begin, (backtracking.iterator - iter_begin));
+            captures.emplace_back(&*iter_begin, (backtracking.iterator - iter_begin));
             ++backtracking.captures_size;
             backtracking.matched = true;
         }
@@ -514,7 +518,7 @@ static std::tuple<const details::trie_data*, bool, iterator> search_in_node(cons
             ++iter;
         }
 
-        captures.emplace_back(iter_begin, (iter - iter_begin));
+        captures.emplace_back(&*iter_begin, (iter - iter_begin));
         backtracking_stack.push_back({.node = node_data, .index = 1, .captures_size = current_capture_size + 1, .matched = true, .iterator = iter});
         return std::tuple(&node_data->node.matches[0], false, iter);
     }

@@ -1,7 +1,14 @@
 
 #include "benchmark/benchmark.h"
 #include <hyperoute/context_params.hpp>
-#include <valgrind/callgrind.h>
+#ifdef VALGRIND_BENCHMARK
+#	include <valgrind/callgrind.h>
+#else
+#	define CALLGRIND_START_INSTRUMENTATION
+#	define CALLGRIND_STOP_INSTRUMENTATION
+#	define CALLGRIND_TOGGLE_COLLECT
+#	define CALLGRIND_TOGGLE_COLLECT
+#endif
 
 template<typename Params>
 class Hyperoute_params : public ::benchmark::Fixture
