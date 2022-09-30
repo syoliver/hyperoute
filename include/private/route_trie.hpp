@@ -20,7 +20,7 @@ namespace hyperoute
         {
             
             std::vector<std::pair<std::string, trie_data>> statics;
-            std::vector<trie_data> matches;
+            std::unique_ptr<trie_data> matches;
         };
 
         struct trie_data

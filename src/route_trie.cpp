@@ -15,7 +15,6 @@ namespace details
     struct backtracking_info
     {
         const details::trie_data* node;
-        std::size_t index;
         std::size_t captures_size;
         bool matched;
         std::string_view::const_iterator iterator;
@@ -46,11 +45,11 @@ static void do_print_trie(const details::trie_node* node, std::size_t ident = 0)
         do_print_trie(&node.second.node, ident+1);
     }
 
-    for(const auto& node: node->matches)
+    if(node->matches != nullptr)
     {
         for(std::size_t i = 0 ; i < ident ; ++i) std::cout << "-";
-        std::cout << "[" << (node.is_route_prefix ? "*":"") << node.route_index << "]: <MATCH>"  << std::endl;
-        do_print_trie(&node.node, ident+1);
+        std::cout << "[" << (node->matches->is_route_prefix ? "*":"") << node->matches->route_index << "]: <MATCH>"  << std::endl;
+        do_print_trie(&node->matches->node, ident+1);
     }
 }
 
@@ -121,86 +120,55 @@ namespace
 {
     struct binary_search_comparator
     {
-        binary_search_comparator(const std::size_t index)
-            : index_(index)
-        {
-
-        }
-
         bool operator()(const std::pair<std::string, details::trie_data>& lhs, const char value) const
         {
-            if(lhs.first.size() <= index_)
+            if(lhs.first.empty())
             {
                 return true;
             }
-            return lhs.first[index_] < value;
+            return lhs.first[0] < value;
         }
 
         bool operator()(const char value, const std::pair<std::string, details::trie_data>& rhs) const
         {
-            if(rhs.first.size() <= index_)
+            if(rhs.first.empty())
             {
                 return true;
             }
-            return value < rhs.first[index_];
+            return value < rhs.first[0];
         }
-
-        const std::size_t index_;
     };
 }
 
 static std::tuple<details::trie_data*, iterator> find_prefix_in_node(details::trie_node* node, iterator iter_begin, iterator iter_end)
 {
-    auto iter_statics_begin = std::begin(node->statics);
-    auto iter_statics_end = std::end(node->statics);
     std::size_t index = 0;
     auto iter = iter_begin;
 
-    while(iter != iter_end && std::distance(iter_statics_begin, iter_statics_end) > 1)
-    {
-        std::tie(iter_statics_begin, iter_statics_end) = std::equal_range(
-            iter_statics_begin,
-            iter_statics_end,
-            *iter,
-            binary_search_comparator{index}
-        );
-        ++iter;
-        ++index;
-    }
+    auto iter_statics = std::lower_bound(
+        std::begin(node->statics),
+        std::end(node->statics),
+        *iter_begin,
+        binary_search_comparator{}
+    );
 
-    if(iter_statics_begin == iter_statics_end)
+    if(iter_statics != std::end(node->statics) && (iter_statics->first[0] == *iter_begin))
     {
-        const std::string_view new_node_prefix(&*iter_begin, (iter_end-iter_begin));
-        
-        auto iter_where = std::upper_bound(
-            std::begin(node->statics),
-            std::end(node->statics),
-            new_node_prefix,
-            [](const auto prefix, const auto& rhs) {
-                return prefix < rhs.first;
-        });
-
-        auto iter_inserted = node->statics.emplace(iter_where, new_node_prefix, details::trie_data{});
-
-        return std::pair(&iter_inserted->second, iter_end);
-    }
-    else if(std::distance(iter_statics_begin, iter_statics_end) == 1)
-    {
-        while(index < iter_statics_begin->first.size() && (iter != iter_end) && iter_statics_begin->first[index] == *iter)
+        while(index < iter_statics->first.size() && (iter != iter_end) && iter_statics->first[index] == *iter)
         {
             ++index;
             ++iter;
         }
 
-        if(index == iter_statics_begin->first.size())
+        if(index == iter_statics->first.size())
         {
-            return std::pair(&iter_statics_begin->second, iter_begin+index);
+            return std::pair(&iter_statics->second, iter_begin+index);
         }
         else if(iter == iter_end)
         {
             details::trie_data new_node_data;
-            std::swap(new_node_data, iter_statics_begin->second);
-            details::trie_node& parent_node = iter_statics_begin->second.node;
+            std::swap(new_node_data, iter_statics->second);
+            details::trie_node& parent_node = iter_statics->second.node;
 
             const std::string_view new_node_prefix =
                 (iter == iter_begin) ? std::string_view{}:std::string_view(&*iter_begin, (iter - iter_begin));
@@ -208,44 +176,53 @@ static std::tuple<details::trie_data*, iterator> find_prefix_in_node(details::tr
             const std::string_view new_node_suffix =
                 (iter == iter_end) ? std::string_view{}: std::string_view(&*iter, (iter_end - iter));
             
-            parent_node.statics.emplace_back(iter_statics_begin->first.substr(index), std::move(new_node_data));
-            iter_statics_begin->first = new_node_prefix;
+            parent_node.statics.emplace_back(iter_statics->first.substr(index), std::move(new_node_data));
+            iter_statics->first = new_node_prefix;
 
 
-            return std::pair(&iter_statics_begin->second, iter_end);
+            return std::pair(&iter_statics->second, iter_end);
         }
-        else
-        {
-            // Create new node and split previous one
-            details::trie_data new_node_data;
-            std::swap(new_node_data, iter_statics_begin->second);
 
-            details::trie_node& parent_node = iter_statics_begin->second.node;
+        // Create new node and split previous one
+        details::trie_data new_node_data;
+        std::swap(new_node_data, iter_statics->second);
 
-            const std::string_view new_node_prefix(&*iter_begin, (iter - iter_begin));
-            const std::string_view new_node_suffix(&*iter, (iter_end - iter));
+        details::trie_node& parent_node = iter_statics->second.node;
 
-            parent_node.statics.emplace_back(iter_statics_begin->first.substr(index), std::move(new_node_data));
+        const std::string_view new_node_prefix(&*iter_begin, (iter - iter_begin));
+        const std::string_view new_node_suffix(&*iter, (iter_end - iter));
 
-            iter_statics_begin->first = new_node_prefix;
+        parent_node.statics.emplace_back(iter_statics->first.substr(index), std::move(new_node_data));
+
+        iter_statics->first = new_node_prefix;
 
 
-            auto iter_where = std::upper_bound(
-                std::begin(parent_node.statics),
-                std::end(parent_node.statics),
-                new_node_suffix,
-                [](const auto prefix, const auto& rhs) {
-                    return prefix < rhs.first;
-            });
+        auto iter_where = std::upper_bound(
+            std::begin(parent_node.statics),
+            std::end(parent_node.statics),
+            new_node_suffix,
+            [](const auto prefix, const auto& rhs) {
+                return prefix < rhs.first;
+        });
 
-            auto iter_inserted = parent_node.statics.emplace(iter_where, new_node_suffix, details::trie_data{});
+        auto iter_inserted = parent_node.statics.emplace(iter_where, new_node_suffix, details::trie_data{});
 
-            return std::pair(&iter_inserted->second, iter_end);
-        }
+        return std::pair(&iter_inserted->second, iter_end);
     }
 
-    // How is it possible ?
-    return std::pair(nullptr, iter_end);
+    const std::string_view new_node_prefix(&*iter_begin, (iter_end-iter_begin));
+    
+    auto iter_where = std::upper_bound(
+        std::begin(node->statics),
+        std::end(node->statics),
+        new_node_prefix,
+        [](const auto prefix, const auto& rhs) {
+            return prefix < rhs.first;
+    });
+
+    auto iter_inserted = node->statics.emplace(iter_where, new_node_prefix, details::trie_data{});
+
+    return std::pair(&iter_inserted->second, iter_end);
 }
 
 static std::pair<details::trie_data*, iterator> insert_in_node_static(details::trie_node* node, iterator iter_route, iterator iter_match_begin, iterator iter_match_end)
@@ -261,7 +238,11 @@ static std::pair<details::trie_data*, iterator> insert_in_node_static(details::t
 
 static details::trie_data* insert_in_node_match(details::trie_node* node, iterator match_begin, iterator match_end)
 {
-    return &node->matches.emplace_back();
+    if(node->matches == nullptr)
+    {
+        node->matches = std::make_unique<details::trie_data>();
+    }
+    return &*node->matches;
 }
 
 
@@ -444,7 +425,7 @@ static std::tuple<const details::trie_data*, bool, iterator> search_in_node(cons
 {
     if(backtracking_mode)
     {
-        while(backtracking_stack.empty() == false && backtracking_stack.back().node->node.matches.size() <= backtracking_stack.back().index)
+        while(backtracking_stack.empty() == false && ((backtracking_stack.back().node->node.matches == nullptr) || (backtracking_stack.back().matched)))
         {
             backtracking_stack.pop_back();
         }
@@ -457,7 +438,6 @@ static std::tuple<const details::trie_data*, bool, iterator> search_in_node(cons
         auto& backtracking = backtracking_stack.back();
         captures.resize(backtracking.captures_size);
 
-        if(backtracking.matched == false)
         {
             const auto iter_begin = backtracking.iterator;
             while((backtracking.iterator != iter_end) && (*backtracking.iterator != '/')) ++backtracking.iterator;
@@ -467,51 +447,43 @@ static std::tuple<const details::trie_data*, bool, iterator> search_in_node(cons
             backtracking.matched = true;
         }
 
-        ++backtracking.index;
-        return std::tuple(&backtracking.node->node.matches[backtracking.index-1], false, backtracking.iterator);
+        return std::tuple(backtracking.node->node.matches.get(), false, backtracking.iterator);
     }
 
     auto iter_begin = iter;
-    auto iter_statics_begin = std::begin(node_data->node.statics);
-    auto iter_statics_end = std::end(node_data->node.statics);
     std::size_t index = 0;
     
-    while(iter != iter_end && std::distance(iter_statics_begin, iter_statics_end) > 1)
-    {
-        std::tie(iter_statics_begin, iter_statics_end) = std::equal_range(
-            iter_statics_begin,
-            iter_statics_end,
-            *iter,
-            binary_search_comparator{index}
-        );
+    auto iter_statics = std::lower_bound(
+        std::begin(node_data->node.statics),
+        std::end(node_data->node.statics),
+        *iter_begin,
+        binary_search_comparator{}
+    );
 
-        ++iter;
-        ++index;
-    }
 
     const auto current_capture_size = (backtracking_stack.empty()?0:backtracking_stack.back().captures_size);
 
-    if(std::distance(iter_statics_begin, iter_statics_end) == 1)
+    if(iter_statics != std::end(node_data->node.statics) && (iter_statics->first[0] == *iter_begin))
     {
-        while(index < iter_statics_begin->first.size() && (iter != iter_end) && iter_statics_begin->first[index] == *iter)
+        while(index < iter_statics->first.size() && (iter != iter_end) && iter_statics->first[index] == *iter)
         {
             ++index;
             ++iter;
         }
         
-        if(index == iter_statics_begin->first.size())
+        if(index == iter_statics->first.size())
         {
-            if(node_data->node.matches.empty() == false)
+            if(node_data->node.matches != nullptr)
             {
-                backtracking_stack.push_back({.node = node_data, .index = 0, .captures_size = current_capture_size, .matched = false, .iterator = iter_begin});
+                backtracking_stack.push_back({.node = node_data, .captures_size = current_capture_size, .matched = false, .iterator = iter_begin});
             }
-            return std::tuple(&iter_statics_begin->second, false, iter);
+            return std::tuple(&iter_statics->second, false, iter);
         }
     }
     
     iter = iter_begin;
 
-    if(node_data->node.matches.empty() == false)
+    if(node_data->node.matches != nullptr)
     {
         while((iter != iter_end) && (*iter != '/'))
         {
@@ -519,23 +491,25 @@ static std::tuple<const details::trie_data*, bool, iterator> search_in_node(cons
         }
 
         captures.emplace_back(&*iter_begin, (iter - iter_begin));
-        backtracking_stack.push_back({.node = node_data, .index = 1, .captures_size = current_capture_size + 1, .matched = true, .iterator = iter});
-        return std::tuple(&node_data->node.matches[0], false, iter);
+        backtracking_stack.push_back({.node = node_data, .captures_size = current_capture_size + 1, .matched = true, .iterator = iter});
+        return std::tuple(node_data->node.matches.get(), false, iter);
     }
 
 
     // Begin backtracking...
     if(backtracking_stack.empty() == false)
     {
-        if(node_data->node.matches.size() >= backtracking_stack.back().index)
+        if((backtracking_stack.back().node->node.matches == nullptr) || (backtracking_stack.back().matched))
         {
             backtracking_stack.pop_back();
+        }
+        
+        if(backtracking_stack.empty() == false)
+        {
             const auto& backtracking = backtracking_stack.back();
 
             return std::tuple(backtracking.node, true, backtracking.iterator);
         }
-        auto& backtracking = backtracking_stack.back();
-        return std::tuple(backtracking.node, true, backtracking.iterator);
     }
 
 
@@ -619,10 +593,9 @@ static std::size_t max_captures(const details::trie_node* node)
         {
             stack.push_back({.node = &stack_node.node->statics[stack_node.index].second.node, .index = 0, .depth = stack_node.depth});
         }
-        else if(stack_node.index - stack_node.node->statics.size() < stack_node.node->matches.size())
+        else if((stack_node.index == stack_node.node->statics.size()) && stack_node.node->matches != nullptr)
         {
-            const auto match_index = stack_node.index - stack_node.node->statics.size();
-            stack.push_back({.node = &stack_node.node->matches[match_index].node, .index = 0, .depth = stack_node.depth+1});
+            stack.push_back({.node = &stack_node.node->matches->node, .index = 0, .depth = stack_node.depth+1});
         }
         else
         {
@@ -657,15 +630,14 @@ static std::size_t max_backtracking(const details::trie_node* node)
         auto& stack_node = stack.back();
         if(stack_node.index < stack_node.node->statics.size())
         {
-            const auto has_matches = (stack_node.node->matches.empty() == false);
+            const auto has_matches = (stack_node.node->matches != nullptr);
 
             stack.push_back({.node = &stack_node.node->statics[stack_node.index].second.node, .index = 0, .depth = stack_node.depth + (has_matches?1:0)});
 
         }
-        else if(stack_node.index - stack_node.node->statics.size() < stack_node.node->matches.size())
+        else if((stack_node.index == stack_node.node->statics.size()) && stack_node.node->matches != nullptr)
         {
-            const auto match_index = stack_node.index - stack_node.node->statics.size();
-            stack.push_back({.node = &stack_node.node->matches[match_index].node, .index = 0, .depth = stack_node.depth+1});
+            stack.push_back({.node = &stack_node.node->matches->node, .index = 0, .depth = stack_node.depth+1});
         }
         else
         {

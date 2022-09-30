@@ -103,3 +103,19 @@ PRIVATE
 set_target_properties(google_api_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME google_api_test COMMAND google_api_test)
+
+#########################################################
+
+add_executable(github_api_test github_api.cpp)
+
+target_link_libraries(
+    github_api_test
+PRIVATE
+    hyperoute
+    Boost::headers
+    turtle::turtle
+)
+
+set_target_properties(github_api_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
+
+add_test(NAME github_api_test COMMAND github_api_test)

@@ -214,6 +214,8 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
         BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/people/([^\\/]+)$", 4));
         BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/openIdConnect$", 5));
 
+        trie.print_trie();
+        
         auto context = trie.create_search_context();
 
         BOOST_TEST(context.captures.capacity() == 2);

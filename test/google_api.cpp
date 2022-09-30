@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_SUITE(GoogleApi)
 
         router->call("GET", "/people/jzepdzdzm");
     }
-    /*
+
     BOOST_DATA_TEST_CASE_F(GoogleApi_Fixture, route_2, test_backends(), kind, backend)
     {
         const auto router = create_router(backend);
@@ -203,5 +203,4 @@ BOOST_AUTO_TEST_SUITE(GoogleApi)
         router->call("DELETE", "/moments/165454166584");
     }
 
-    */
 BOOST_AUTO_TEST_SUITE_END()
