@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <limits>
 
 namespace hyperoute
 {
