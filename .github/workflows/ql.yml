@@ -1,0 +1,62 @@
+name: QL
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+
+concurrency:
+  group: ql-${{format('{0}:{1}', github.repository, github.ref)}}
+  cancel-in-progress: true
+
+env:
+  GIT_FETCH_JOBS: 8
+  NET_RETRY_COUNT: 5
+  DEFAULT_BUILD_VARIANT: debug,release
+
+jobs:
+  publish-CodeQL:
+    name: "Publish CodeQL"
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
+
+    steps:
+      - run: |
+          apt-get -o Acquire::Retries=$NET_RETRY_COUNT update
+          apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y sudo software-properties-common wget build-essential python3 python3-distutils g++-10 curl
+          echo "=== install pip ==="
+          wget https://bootstrap.pypa.io/pip/$python_version/get-pip.py
+          python3 get-pip.py
+          
+          echo "=== install git ==="
+          apt-add-repository ppa:git-core/ppa
+          apt-get -o Acquire::Retries=$NET_RETRY_COUNT update && apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y git
+          
+          echo "=== install cmake ==="
+          sudo pip3 install cmake
+
+          echo "=== install conan ==="
+          sudo pip3 install conan
+
+          conan profile new ci-profile --detect
+          conan profile update settings.compiler.libcxx=libstdc++11 ci-profile
+      - uses: actions/checkout@v2
+      - run : |
+          mkdir build
+          cd build
+          export CFLAGS=-Wno-error=stringop-overflow
+          export CXXFLAGS=$CFLAGS
+          conan install .. -s build_type=Debug --build=missing -pr=ci-profile
+          export CFLAGS=
+          export CXXFLAGS=
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DBUILD_BENCHMARK=OFF
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp
+      - run: |
+          make -C build
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2

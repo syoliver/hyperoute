@@ -1,0 +1,225 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+
+concurrency:
+  group: ci-${{format('{0}:{1}', github.repository, github.ref)}}
+  cancel-in-progress: true
+
+env:
+  GIT_FETCH_JOBS: 8
+  NET_RETRY_COUNT: 5
+  DEFAULT_BUILD_VARIANT: debug,release
+
+jobs:
+  posix-build-and-test:
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux, gc
+          - toolset: gcc-10
+            cxxstd: "17"
+            os: ubuntu-22.04
+            container: ubuntu:22.04
+            install:
+              - g++-10
+            coverage: true
+          - toolset: gcc-11
+            cxxstd: "17,20"
+            os: ubuntu-22.04
+            container: ubuntu:22.04
+            install:
+              - g++-11
+            sources:
+              - "ppa:ubuntu-toolchain-r/test"
+            coverity: true
+
+          # Linux, clang
+          - toolset: clang
+            compiler: clang++-12
+            cxxstd: "17,20"
+            cxxflags: -stdlib=libc++
+            linkflags: -stdlib=libc++
+            os: ubuntu-20.04
+            container: ubuntu:20.04
+            install:
+              - clang-12
+              - libc++-12-dev
+              - libc++abi-12-dev
+
+
+    timeout-minutes: 120
+    runs-on: ${{matrix.os}}
+    container: ${{matrix.container}}
+
+    steps:
+      - name: Setup environment
+        run: |
+            if [ -f "/etc/debian_version" ]
+            then
+                echo "DEBIAN VERSION"
+                echo "DEBIAN_FRONTEND=noninteractive" >> $GITHUB_ENV
+                export DEBIAN_FRONTEND=noninteractive
+            fi
+            if [ -n "${{matrix.container}}" ]
+            then
+                echo "MATRIX CONTAINER: ${{matrix.container}}"
+                echo "GHA_CONTAINER=${{matrix.container}}" >> $GITHUB_ENV
+                if [ -f "/etc/debian_version" ]
+                then
+                    apt-get -o Acquire::Retries=$NET_RETRY_COUNT update
+                    apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y sudo software-properties-common wget build-essential python3 python3-distutils
+                    echo "=== install pip ==="
+                    wget https://bootstrap.pypa.io/pip/$python_version/get-pip.py
+                    python3 get-pip.py
+                    
+                    echo "=== install git ==="
+                    apt-add-repository ppa:git-core/ppa
+                    apt-get -o Acquire::Retries=$NET_RETRY_COUNT update && apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y git
+                    
+                    echo "=== install cmake ==="
+                    sudo pip3 install cmake
+
+                    echo "=== install conan ==="
+                    sudo pip3 install conan
+
+                    conan profile new ci-profile --detect
+                    conan profile update settings.compiler.libcxx=libstdc++11 ci-profile
+                fi
+            fi
+            git config --global pack.threads 0
+      - uses: actions/checkout@v2
+      - name: Run git init
+        run: git init
+      - name: Install packages
+        if: matrix.install
+        run: |
+            SOURCE_KEYS=(${{join(matrix.source_keys, ' ')}})
+            SOURCES=(${{join(matrix.sources, ' ')}})
+            for key in "${SOURCE_KEYS[@]}"
+            do
+                for i in {1..$NET_RETRY_COUNT}
+                do
+                    wget -O - "$key" | sudo apt-key add - && break || sleep 2
+                done
+            done
+            if [ ${#SOURCES[@]} -gt 0 ]
+            then
+                APT_ADD_REPO_COMMON_ARGS=("-y")
+                APT_ADD_REPO_HAS_SOURCE_ARGS=0
+                SOFTWARE_PROPERTIES_VERSION="$(dpkg-query --showformat='${Version}' --show software-properties-common)"
+                if dpkg --compare-versions "$SOFTWARE_PROPERTIES_VERSION" ge "0.96.24.20"
+                then
+                    APT_ADD_REPO_COMMON_ARGS+=("-n")
+                fi
+                if dpkg --compare-versions "$SOFTWARE_PROPERTIES_VERSION" ge "0.98.10"
+                then
+                    APT_ADD_REPO_HAS_SOURCE_ARGS=1
+                fi
+                for source in "${SOURCES[@]}"
+                do
+                    for i in {1..$NET_RETRY_COUNT}
+                    do
+                        APT_ADD_REPO_ARGS=("${APT_ADD_REPO_COMMON_ARGS[@]}")
+                        if [ $APT_ADD_REPO_HAS_SOURCE_ARGS -ne 0 ]
+                        then
+                            case "$source" in
+                            "ppa:"*)
+                                APT_ADD_REPO_ARGS+=("-P")
+                                ;;
+                            "deb "*)
+                                APT_ADD_REPO_ARGS+=("-S")
+                                ;;
+                            *)
+                                APT_ADD_REPO_ARGS+=("-U")
+                                ;;
+                            esac
+                        fi
+                        APT_ADD_REPO_ARGS+=("$source")
+                        sudo -E apt-add-repository "${APT_ADD_REPO_ARGS[@]}" && break || sleep 2
+                    done
+                done
+            fi
+            sudo apt-get -o Acquire::Retries=$NET_RETRY_COUNT update
+            sudo apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y ${{join(matrix.install, ' ')}}
+      - name: Setup GCC Toolchain
+        if: matrix.gcc_toolchain
+        run: |
+            GCC_TOOLCHAIN_ROOT="$HOME/gcc-toolchain"
+            echo "GCC_TOOLCHAIN_ROOT=\"$GCC_TOOLCHAIN_ROOT\"" >> $GITHUB_ENV
+            MULTIARCH_TRIPLET="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
+            mkdir -p "$GCC_TOOLCHAIN_ROOT"
+            ln -s /usr/include "$GCC_TOOLCHAIN_ROOT/include"
+            ln -s /usr/bin "$GCC_TOOLCHAIN_ROOT/bin"
+            mkdir -p "$GCC_TOOLCHAIN_ROOT/lib/gcc/$MULTIARCH_TRIPLET"
+            ln -s "/usr/lib/gcc/$MULTIARCH_TRIPLET/${{matrix.gcc_toolchain}}" "$GCC_TOOLCHAIN_ROOT/lib/gcc/$MULTIARCH_TRIPLET/${{matrix.gcc_toolchain}}"
+      - name: Build Tests
+        run: |
+          mkdir build
+          cd build
+          export CFLAGS=-Wno-error=stringop-overflow
+          export CXXFLAGS=$CFLAGS
+          conan install .. -s build_type=Debug --build=missing -pr=ci-profile
+          export CFLAGS=
+          export CXXFLAGS=
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -DTEST_OUTPUT=JUNIT
+          cmake --build . --config Debug
+      - name: Run Tests
+        run: |
+            cd build
+            ctest --output-on-failure
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test Results (${{ matrix.toolset }} on linux)
+          path: "./build/test/*.xml"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: always() && matrix.coverage == true
+        with:
+          name: Hyperoute coverage
+          gcov: true
+          gcov_include: ./build
+          gcov_ignore: ./build/test
+          verbose: true
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: posix-build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+
+      # only needed unless run with comment_mode: off
+      pull-requests: write
+
+      # only needed for private repository
+      contents: read
+
+      # only needed for private repository
+      issues: read
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          junit_files: "artifacts/**/*.xml"
+
