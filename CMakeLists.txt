@@ -15,6 +15,15 @@ include(CTest)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND BUILD_TESTING)
+        set(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -O0")
+        set(CMAKE_C_FLAGS "-fprofile-arcs -ftest-coverage -O0")
+    endif()
+endif()
+
+
 find_package(hyperscan REQUIRED)
 
 add_library(
