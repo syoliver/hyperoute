@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(hyperoute_test)
 
 option(WITH_R3 OFF)
+option(WITH_HTTP_ROUTER OFF)
+
 find_package(benchmark REQUIRED)
 
 add_executable(hyperoute_bench main_hyperoute.cpp)
@@ -9,6 +11,11 @@ add_executable(hyperoute_bench main_hyperoute.cpp)
 if(WITH_R3)
     add_subdirectory(third-parties)
     target_compile_definitions(hyperoute_bench PRIVATE -DWITH_R3)
+endif()
+
+
+if(WITH_HTTP_ROUTER)
+    target_compile_definitions(hyperoute_bench PRIVATE -DWITH_HTTP_ROUTER)
 endif()
 
 
@@ -42,6 +49,13 @@ if(WITH_R3)
     )
 endif()
 
+if(WITH_HTTP_ROUTER)
+    target_include_directories(
+        hyperoute_bench
+    PUBLIC
+        third-parties/HttpRouter
+    )
+endif()
 
 set_target_properties(hyperoute_bench PROPERTIES CXX_STANDARD 17)
 

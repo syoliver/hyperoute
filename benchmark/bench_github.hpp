@@ -612,7 +612,7 @@ protected:
         r3_tree_insert_routel(n, METHOD_GET,    "/search/issues"                                              , sizeof("/search/issues"                                              ) - 1, &route_data[212]);
         r3_tree_insert_routel(n, METHOD_GET,    "/search/users"                                               , sizeof("/search/users"                                               ) - 1, &route_data[213]);
         r3_tree_insert_routel(n, METHOD_GET,    "/legacy/issues/search/{owner}/{repository}/{state}/{keyword}", sizeof("/legacy/issues/search/{owner}/{repository}/{state}/{keyword}") - 1, &route_data[214]);
-        r3_tree_insert_routel(n, METHOD_GET,    "/legacy/repos/search/{keyword"                               , sizeof("/legacy/repos/search/{keyword"                               ) - 1, &route_data[215]);
+        r3_tree_insert_routel(n, METHOD_GET,    "/legacy/repos/search/{keyword}"                              , sizeof("/legacy/repos/search/{keyword}"                               ) - 1, &route_data[215]);
         r3_tree_insert_routel(n, METHOD_GET,    "/legacy/user/search/{keyword}"                               , sizeof("/legacy/user/search/{keyword}"                               ) - 1, &route_data[216]);
         r3_tree_insert_routel(n, METHOD_GET,    "/legacy/user/email/{email}"                                  , sizeof("/legacy/user/email/{email}"                                  ) - 1, &route_data[217]);
 
@@ -702,6 +702,354 @@ protected:
 };
 
 BENCHMARK_F(Github_R3Benchmark, R3)(benchmark::State& st)
+{
+    Execute(st);
+}
+
+#endif
+
+
+#ifdef WITH_HTTP_ROUTER
+
+class Github_HttpRouterBenchmark : public ::benchmark::Fixture
+{
+protected:
+    struct UserData {
+    };
+
+    UserData data;
+    std::optional<HttpRouter<UserData *>> router;
+
+    
+    Github_HttpRouterBenchmark()
+    {
+    }
+
+    void SetUp(const ::benchmark::State& state) BENCHMARK_OVERRIDE
+    {
+        router.emplace();
+
+        // OAuth Authorizations
+        router->add("GET",    "/authorizations"                                 , [](UserData *user, auto &args) {});
+        router->add("GET",    "/authorizations/:id"                             , [](UserData *user, auto &args) {});
+        router->add("POST",   "/authorizations"                                 , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/authorizations/clients/:client_id"              , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/authorizations/:id"                             , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/authorizations/:id"                             , [](UserData *user, auto &args) {});
+        router->add("GET",    "/applications/:client_id/tokens/:access_token"   , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/applications/:client_id/tokens"                 , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/applications/:client_id/tokens/:access_token"   , [](UserData *user, auto &args) {});
+
+        // Activity
+        router->add("GET",    "/events"                                 , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/events"            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/networks/:owner/:repo/events"         , [](UserData *user, auto &args) {});
+        router->add("GET",    "/orgs/:org/events"                      , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/received_events"           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/received_events/public"    , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/events"                    , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/events/public"             , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/events/orgs/:org"         , [](UserData *user, auto &args) {});
+        router->add("GET",    "/feeds"                                  , [](UserData *user, auto &args) {});
+        router->add("GET",    "/notifications"                          , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/notifications"     , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/notifications"                          , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/repos/:owner/:repo/notifications"     , [](UserData *user, auto &args) {});
+        router->add("GET",    "/notifications/threads/:id"             , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/notifications/threads/:id"             , [](UserData *user, auto &args) {});
+        router->add("GET",    "/notifications/threads/:id/subscription", [](UserData *user, auto &args) {});
+        router->add("PUT",    "/notifications/threads/:id/subscription", [](UserData *user, auto &args) {});
+        router->add("DELETE", "/notifications/threads/:id/subscription", [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/stargazers"        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/starred"                   , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/starred"                           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/starred/:owner/:repo"            , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/user/starred/:owner/:repo"            , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/user/starred/:owner/:repo"            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/subscribers"       , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/subscriptions"             , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/subscriptions"                     , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/subscription"      , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/repos/:owner/:repo/subscription"      , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/subscription"      , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/subscriptions/:owner/:repo"      , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/user/subscriptions/:owner/:repo"      , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/user/subscriptions/:owner/:repo"      , [](UserData *user, auto &args) {});
+
+
+        // Gists
+        router->add("GET",    "/users/:user/gists"     , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gists"                  , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gists/public"           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gists/starred"          , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gists/:id"             , [](UserData *user, auto &args) {});
+        router->add("POST",   "/gists"                  , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/gists/:id"             , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/gists/:id/star"        , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/gists/:id/star"        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gists/:id/star"        , [](UserData *user, auto &args) {});
+        router->add("POST",   "/gists/:id/forks"       , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/gists/:id"             , [](UserData *user, auto &args) {});
+
+        // Git Data
+        router->add("GET",    "/repos/:owner/:repo/git/blobs/:sha"     , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/git/blobs"           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/git/commits/:sha"   , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/git/commits"         , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/git/refs/"           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/git/refs"            , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/git/refs"            , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/git/refs/"           , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/git/refs/"           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/git/tags/:sha"      , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/git/tags"            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/git/trees/:sha"     , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/git/trees"           , [](UserData *user, auto &args) {});
+
+
+        // Issues
+        router->add("GET",    "/issues"                                             , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/issues"                                        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/orgs/:org/issues"                                  , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues"                        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/:number"               , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/issues"                        , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/issues/:number"               , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/assignees"                     , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/assignees/:assignee"          , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/:number/comments"      , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/comments"               , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/comments/:id"          , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/issues/:number/comments"      , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/issues/comments/:id"          , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/issues/comments/:id"          , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/:number/events"        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/events"                 , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/events/:id"            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/labels"                        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/labels/:name"                 , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/labels"                        , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/labels/:name"                 , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/labels/:name"                 , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/issues/:number/labels"        , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/issues/:number/labels"        , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/issues/:number/labels/:name" , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/repos/:owner/:repo/issues/:number/labels"        , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/issues/:number/labels"        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/milestones/:number/labels"    , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/milestones"                    , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/milestones/:number"           , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/milestones"                    , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/milestones/:number"           , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/milestones/:number"           , [](UserData *user, auto &args) {});
+    
+        // Miscellaneous
+        router->add("GET",    "/emojis"                     , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gitignore/templates"        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/gitignore/templates/:name" , [](UserData *user, auto &args) {});
+        router->add("POST",   "/markdown"                   , [](UserData *user, auto &args) {});
+        router->add("POST",   "/markdown/raw"               , [](UserData *user, auto &args) {});
+        router->add("GET",    "/meta"                       , [](UserData *user, auto &args) {});
+        router->add("GET",    "/rate_limit"                 , [](UserData *user, auto &args) {});
+
+
+
+        // Organizations
+        router->add("GET",     "/users/:user/orgs"                  , [](UserData *user, auto &args) {});
+        router->add("GET",     "/user/orgs"                          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org"                         , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/orgs/:org"                         , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org/members"                 , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org/members/:user"          , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/orgs/:org/members/:user"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org/public_members"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org/public_members/:user"   , [](UserData *user, auto &args) {});
+        router->add("PUT",     "/orgs/:org/public_members/:user"   , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/orgs/:org/public_members/:user"   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org/teams"                   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/teams/:id"                         , [](UserData *user, auto &args) {});
+        router->add("POST",    "/orgs/:org/teams"                   , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/teams/:id"                         , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/teams/:id"                         , [](UserData *user, auto &args) {});
+        router->add("GET",     "/teams/:id/members"                 , [](UserData *user, auto &args) {});
+        router->add("GET",     "/teams/:id/members/:user"          , [](UserData *user, auto &args) {});
+        router->add("PUT",     "/teams/:id/members/:user"          , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/teams/:id/members/:user"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/teams/:id/repos"                   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/teams/:id/repos/:owner/:repo"    , [](UserData *user, auto &args) {});
+        router->add("PUT",     "/teams/:id/repos/:owner/:repo"    , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/teams/:id/repos/:owner/:repo"    , [](UserData *user, auto &args) {});
+        router->add("GET",     "/user/teams"                         , [](UserData *user, auto &args) {});
+
+
+        // Pull Requests
+        router->add("GET",    "/repos/:owner/:repo/pulls"                     , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/:number"            , [](UserData *user, auto &args) {});
+        router->add("POST",   "/repos/:owner/:repo/pulls"                     , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/pulls/:number"            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/:number/commits"    , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/:number/files"      , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/:number/merge"      , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/repos/:owner/:repo/pulls/:number/merge"      , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/:number/comments"   , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/comments"            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/repos/:owner/:repo/pulls/comments/:number"   , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/repos/:owner/:repo/pulls/:number/comments"   , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/repos/:owner/:repo/pulls/comments/:number"   , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/repos/:owner/:repo/pulls/comments/:number"   , [](UserData *user, auto &args) {});
+
+
+        // Repositories
+        router->add("GET",     "/user/repos"                                  , [](UserData *user, auto &args) {});
+        router->add("GET",     "/users/:user/repos"                          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/orgs/:org/repos"                            , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repositories"                                , [](UserData *user, auto &args) {});
+        router->add("POST",    "/user/repos"                                  , [](UserData *user, auto &args) {});
+        router->add("POST",    "/orgs/:org/repos"                            , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo"                        , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/repos/:owner/:repo"                        , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/contributors"           , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/languages"              , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/teams"                  , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/tags"                   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/branches"               , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/branches/:branch"      , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo"                        , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/collaborators"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/collaborators/:user"   , [](UserData *user, auto &args) {});
+        router->add("PUT",     "/repos/:owner/:repo/collaborators/:user"   , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/collaborators/:user"   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/comments"               , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/commits/:sha/comments" , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/commits/:sha/comments" , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/comments/:id"          , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/repos/:owner/:repo/comments/:id"          , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/comments/:id"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/commits"                , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/commits/:sha"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/readme"                 , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/contents/"              , [](UserData *user, auto &args) {});
+        router->add("PUT",     "/repos/:owner/:repo/contents/"              , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/contents/"              , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/:archive_format/:ref" , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/keys"                   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/keys/:id"              , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/keys"                   , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/repos/:owner/:repo/keys/:id"              , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/keys/:id"              , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/downloads"              , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/downloads/:id"         , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/downloads/:id"         , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/forks"                  , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/forks"                  , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/hooks"                  , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/hooks/:id"             , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/hooks"                  , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/repos/:owner/:repo/hooks/:id"             , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/hooks/:id/tests"       , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/hooks/:id"             , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/merges"                 , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/releases"               , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/releases/:id"          , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/releases"               , [](UserData *user, auto &args) {});
+        router->add("PATCH",   "/repos/:owner/:repo/releases/:id"          , [](UserData *user, auto &args) {});
+        router->add("DELETE",  "/repos/:owner/:repo/releases/:id"          , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/releases/:id/assets"   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/stats/contributors"     , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/stats/commit_activity"  , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/stats/code_frequency"   , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/stats/participation"    , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/stats/punch_card"       , [](UserData *user, auto &args) {});
+        router->add("GET",     "/repos/:owner/:repo/statuses/:ref"         , [](UserData *user, auto &args) {});
+        router->add("POST",    "/repos/:owner/:repo/statuses/:ref"         , [](UserData *user, auto &args) {});
+
+        // Search
+        router->add("GET",    "/search/repositories"                                        , [](UserData *user, auto &args) {});
+        router->add("GET",    "/search/code"                                                , [](UserData *user, auto &args) {});
+        router->add("GET",    "/search/issues"                                              , [](UserData *user, auto &args) {});
+        router->add("GET",    "/search/users"                                               , [](UserData *user, auto &args) {});
+        router->add("GET",    "/legacy/issues/search/:owner/:repository/:state/:keyword", [](UserData *user, auto &args) {});
+        router->add("GET",    "/legacy/repos/search/:keyword"                               , [](UserData *user, auto &args) {});
+        router->add("GET",    "/legacy/user/search/:keyword"                               , [](UserData *user, auto &args) {});
+        router->add("GET",    "/legacy/user/email/:email"                                  , [](UserData *user, auto &args) {});
+
+
+        // Users
+        router->add("GET",    "/users/:user"                           , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user"                                   , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/user"                                   , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users"                                  , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/emails"                            , [](UserData *user, auto &args) {});
+        router->add("POST",   "/user/emails"                            , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/user/emails"                            , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/followers"                 , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/followers"                         , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/following"                 , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/following"                         , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/following/:user"                  , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/following/:target_user"   , [](UserData *user, auto &args) {});
+        router->add("PUT",    "/user/following/:user"                  , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/user/following/:user"                  , [](UserData *user, auto &args) {});
+        router->add("GET",    "/users/:user/keys"                      , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/keys"                              , [](UserData *user, auto &args) {});
+        router->add("GET",    "/user/keys/:id"                         , [](UserData *user, auto &args) {});
+        router->add("POST",   "/user/keys"                              , [](UserData *user, auto &args) {});
+        router->add("PATCH",  "/user/keys/:id"                         , [](UserData *user, auto &args) {});
+        router->add("DELETE", "/user/keys/:id"                         , [](UserData *user, auto &args) {});
+
+
+    }
+
+    void TearDown(const ::benchmark::State& state) BENCHMARK_OVERRIDE
+    {
+        router.reset();
+    }
+
+    void Execute(::benchmark::State& state)
+    {
+        for (auto _ : state)
+        {
+            Execute();
+        }
+    }
+
+    void CallRoute(const char* method, const char* path)
+    {
+        router->route(method, std::strlen(method), path, std::strlen(path), &data);
+    }
+
+    void Execute()
+    {
+        CallRoute("GET",       "/user/keys");
+        CallRoute("POST",      "/user/keys");
+        CallRoute("PUT",       "/user/following/486546843546546546");
+        CallRoute("GET",       "/legacy/issues/search/565435413654651651/65435146516351654/54684351351/1568463516");
+        CallRoute("GET",       "/repos/65435143513514/6543513543513/releases/165435135416541");
+        // Can't handle prefixes
+        // CallRoute("GET",       "/repos/6543543541354654/6543531546565/contents/a/big/content");
+        CallRoute("GET",       "/repos/6543543541354654/6543531546565/contents");
+        CallRoute("GET",       "/repositories");
+        CallRoute("DELETE",    "/repos/15654354654654/165435135416543/pulls/comments/1654351435413513");
+        CallRoute("GET",       "/teams/65465454654654/repos/4654354354654/465413516541321");
+        CallRoute("PUT",       "/teams/65465454654654/repos/56465465146/456543513546546641541");
+
+
+        CallRoute("GET",       "/users/146545136561645451/orgs");
+        CallRoute("GET",       "/gists");
+        CallRoute("GET",       "/markdown");
+        CallRoute("GET",       "/repos/163545435435/46543516546545/issues/comments/156543546546514");
+        CallRoute("GET",       "/repos/1654351351543/135435135135/issues/354365413513514/comments");
+        CallRoute("DELETE",    "/authorizations/1354654151545");
+        CallRoute("GET",       "/applications/841165616164161616/tokens/1654654516565");
+        CallRoute("GET",       "/user/keys");
+        CallRoute("GET",       "/legacy/user/email/15654564");
+        // Can't handle non existent path
+        // CallRoute("GET", "/not_found");
+        CallRoute("GET",       "/user/keys");
+    }
+};
+
+BENCHMARK_F(Github_HttpRouterBenchmark, HttpRouter)(benchmark::State& st)
 {
     Execute(st);
 }

@@ -20,6 +20,10 @@
 #   include <r3.h>
 #endif
 
+#ifdef WITH_HTTP_ROUTER
+#   include <HttpRouter.hpp>
+#endif
+
 #include <optional>
 
 #include <iostream>

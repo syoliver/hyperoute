@@ -1,3 +1,6 @@
 [submodule "benchmark/third-parties/r3"]
 	path = benchmark/third-parties/r3
 	url = https://github.com/syoliver/r3.git
+[submodule "benchmark/third-parties/HttpRouter"]
+	path = benchmark/third-parties/HttpRouter
+	url = https://github.com/killvxk/HttpRouter.git

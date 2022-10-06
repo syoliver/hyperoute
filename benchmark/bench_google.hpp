@@ -212,4 +212,102 @@ BENCHMARK_F(Google_R3Benchmark, R3)(benchmark::State& st)
 
 #endif
 
+
+#ifdef WITH_HTTP_ROUTER
+
+class Google_HttpRouterBenchmark : public ::benchmark::Fixture
+{
+protected:
+    struct UserData {
+    };
+
+    UserData data;
+    std::optional<HttpRouter<UserData *>> router;
+
+    
+    Google_HttpRouterBenchmark()
+    {
+    }
+
+    void SetUp(const ::benchmark::State& state) BENCHMARK_OVERRIDE
+    {
+        router.emplace();
+        // People
+        router->add("GET", "/people/:userId", [](UserData *user, auto &args) {});
+        router->add("GET", "/people", [](UserData *user, auto &args) {});
+        router->add("GET", "/activities/:activityId/people/:collection", [](UserData *user, auto &args) {});
+        router->add("GET", "/people/:userId/people/:collection", [](UserData *user, auto &args) {});
+        router->add("GET", "/people/:userId/openIdConnect", [](UserData *user, auto &args) {});
+
+        // Activities
+        router->add("GET", "/people/:userId/activities/:collection", [](UserData *user, auto &args) {});
+        router->add("GET", "/activities/:activityId", [](UserData *user, auto &args) {});
+        router->add("GET", "/activities", [](UserData *user, auto &args) {});
+
+        // Comments
+        router->add("GET", "/activities/:activityId/comments", [](UserData *user, auto &args) {});
+        router->add("GET", "/comments/:commentId", [](UserData *user, auto &args) {});
+
+        // Moments
+        router->add("POST", "/people/:userId/moments/:collection", [](UserData *user, auto &args) {});
+        router->add("GET", "/people/:userId/moments/:collection", [](UserData *user, auto &args) {});
+        router->add("DELETE", "/moments/:id", [](UserData *user, auto &args) {});
+    }
+
+    void TearDown(const ::benchmark::State& state) BENCHMARK_OVERRIDE
+    {
+        router.reset();
+    }
+
+    void Execute(::benchmark::State& state)
+    {
+        for (auto _ : state)
+        {
+            Execute();
+        }
+    }
+
+    void CallRoute(const char* method, const char* path)
+    {
+        router->route(method, std::strlen(method), path, std::strlen(path), &data);
+    }
+
+    void Execute()
+    {
+        CallRoute("GET", "/people");
+        CallRoute("GET", "/people/118051310819094153327");
+        CallRoute("GET", "/activities/84351354022154364354684/people/8412168431358451351");
+        CallRoute("GET", "/people");
+        CallRoute("POST", "/people/118051310819094153327/moments/8412168431358451351");
+        CallRoute("GET", "/people");
+        CallRoute("DELETE", "/moments/81546314631645295626595");
+        CallRoute("GET", "/people");
+        CallRoute("GET", "/activities/841516194169416161915126/comments");
+        // Can't handle non existent path 
+        // CallRoute("GET", "/not_found");
+        CallRoute("GET", "/people");
+
+        CallRoute("GET", "/people");
+        CallRoute("DELETE", "/moments/81546314631645295626595");
+        CallRoute("GET", "/people");
+        CallRoute("GET", "/people/118051310819094153327/moments/81546314631645295626595");
+        // Can't handle non existent path
+        // CallRoute("GET", "/not_found");
+        CallRoute("GET", "/people");
+        CallRoute("GET", "/people/118051310819094153327/people/81546314631645295626595");
+        CallRoute("GET", "/people");
+        CallRoute("GET", "/people/118051310819094153327/openIdConnect");
+        CallRoute("GET", "/people/118051310819094153327");
+        CallRoute("GET", "/people");
+
+    }
+};
+
+BENCHMARK_F(Google_HttpRouterBenchmark, HttpRouter)(benchmark::State& st)
+{
+    Execute(st);
+}
+
+#endif
+
 #endif
