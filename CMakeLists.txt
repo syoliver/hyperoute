@@ -8,6 +8,7 @@ project(
 )
 
 option(BUILD_TESTING "Build tests" ON)
+option(TEST_OUTPUT "Test output type: HRF, XML or JUNIT" HRF)
 option(BUILD_BENCHMARK "Build benchmarks" ON)
 
 
@@ -191,5 +192,5 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_BENCHMARK)
-    add_subdirectory(benchmark)
+    add_subdirectory(benchmark test/benchmark)
 endif()
