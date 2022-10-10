@@ -121,6 +121,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                     {
                         ec = make_error_condition(error::unbalanced_brace);
                     }
+                    break;
                 }
                 case '\\':
                 {
