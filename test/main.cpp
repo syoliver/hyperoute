@@ -116,6 +116,43 @@ BOOST_DATA_TEST_CASE( route_prefix, all_test_backends(), kind, backend )
     }
 }
 
+BOOST_DATA_TEST_CASE( route_not_found, all_test_backends(), kind, backend )
+{
+    hyperoute::builder builder(backend);
+
+    std::error_condition ec;
+
+    const auto router = builder.build(ec);
+    BOOST_TEST(!ec);
+
+    router->call("GET", "/a/file/path");
+
+    new int(3);
+}
+
+
+BOOST_DATA_TEST_CASE( route_empty_prefix, all_test_backends(), kind, backend )
+{
+    MOCK_FUNCTOR(mock_ctx, void(const hyperoute::route_context&));
+
+    hyperoute::builder builder(backend);
+
+    std::error_condition ec;
+
+    builder.add_route_prefix("", ec, mock_ctx);
+    BOOST_TEST(!ec);
+
+    const auto router = builder.build(ec);
+    BOOST_TEST(!ec);
+
+    {
+        MOCK_EXPECT(mock_ctx).once().with([](const hyperoute::route_context& ctx){
+            return ctx.matched_path.empty() && ctx.remaining_path == "/a/file/path" && ctx.params.empty();
+        });
+        router->call("GET", "/a/file/path");
+    }
+}
+
 
 BOOST_DATA_TEST_CASE( route_verb, all_test_backends(), kind, backend )
 {
@@ -164,7 +201,6 @@ BOOST_DATA_TEST_CASE( add_route_failure_same_param_name, all_test_backends(), ki
     const auto router = builder.build(ec);
     BOOST_TEST((ec == hyperoute::error::duplicate_parameter), "check ec == hyperoute::error::duplicate_parameter has failed [ec == " << ec.message() << "]");
     BOOST_TEST(router.has_value() == false);
-    // router->call("GET", "/test/a/b");
 }
 
 
@@ -180,6 +216,5 @@ BOOST_DATA_TEST_CASE( add_route_failure_regex_syntax, regex_test_backends(), kin
     const auto router = builder.build(ec);
     BOOST_TEST((ec == hyperoute::error::regex_syntax), "check ec == hyperoute::error::regex_syntax has failed [ec == " << ec.message() << "]");
     BOOST_TEST(router.has_value() == false);
-    // router->call("GET", "/test/a");
 }
 

@@ -43,6 +43,8 @@ jobs:
           conan profile new ci-profile --detect
           conan profile update settings.compiler.libcxx=libstdc++11 ci-profile
       - uses: actions/checkout@v2
+      - name: Run git init
+        run: git init
       - run : |
           mkdir build
           cd build
@@ -60,3 +62,5 @@ jobs:
           make -C build
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
+        with:
+          category: "/languages:cpp"

@@ -98,6 +98,7 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                     if(skip)
                     {
                         oss_regex << "\\{";
+                        token_begin = iter+1;
                     }
                     else
                     {
@@ -116,14 +117,18 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                     if(skip)
                     {
                         oss_regex << "\\}";
+                        token_begin = iter+1;
                     }
                     else
                     {
                         ec = make_error_condition(error::unbalanced_brace);
                     }
+                    break;
                 }
                 case '\\':
                 {
+                    oss_regex << std::string_view(&*token_begin, (iter-token_begin));
+                    token_begin = iter+1;
                     want_next_skip = true;
                     break;
                 }
