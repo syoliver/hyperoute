@@ -8,7 +8,8 @@ project(
 )
 
 option(BUILD_TESTING "Build tests" ON)
-option(TEST_OUTPUT "Test output type: HRF, XML or JUNIT" HRF)
+set(TEST_OUTPUT "HRF" CACHE STRING "Test output type: HRF, XML or JUNIT")
+
 option(BUILD_BENCHMARK "Build benchmarks" ON)
 
 

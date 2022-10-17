@@ -122,6 +122,10 @@ PRIVATE
     turtle::turtle
 )
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set_source_files_properties(github_api.cpp PROPERTIES COMPILE_OPTIONS /bigobj)
+endif()
+
 set_target_properties(github_api_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
 add_test(NAME github_api_test COMMAND github_api_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=github_api_test.${TEST_OUTPUT_EXTENSION})
