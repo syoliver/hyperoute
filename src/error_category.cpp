@@ -4,7 +4,7 @@ namespace hyperoute
 {
 /* virtual */ error_category::~error_category() = default;
 
-/* virtual */ const char* error_category::name() const noexcept
+/* virtual */ const char *error_category::name() const noexcept
 {
     return "hyperoute";
 }
@@ -21,4 +21,4 @@ namespace hyperoute
     return "success";
 }
 
-}
+}  // namespace hyperoute

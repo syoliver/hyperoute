@@ -27,6 +27,14 @@ jobs:
       matrix:
         include:
           # Linux, gc
+          - toolset: gcc-7
+            cxxstd: "17"
+            os: ubuntu-22.04
+            container: ubuntu:20.04
+            install:
+              - g++-7
+            valgrind: true
+
           - toolset: gcc-10
             cxxstd: "17"
             os: ubuntu-22.04
@@ -78,7 +86,7 @@ jobs:
                 if [ -f "/etc/debian_version" ]
                 then
                     apt-get -o Acquire::Retries=$NET_RETRY_COUNT update
-                    apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y sudo software-properties-common wget build-essential python3 python3-distutils
+                    apt-get -o Acquire::Retries=$NET_RETRY_COUNT install -y sudo software-properties-common valgrind wget build-essential python3 python3-distutils
                     echo "=== install pip ==="
                     wget https://bootstrap.pypa.io/pip/$python_version/get-pip.py
                     python3 get-pip.py
@@ -172,7 +180,11 @@ jobs:
           conan install .. -s build_type=Debug --build=missing -pr=ci-profile
           export CFLAGS=
           export CXXFLAGS=
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -DTEST_OUTPUT=JUNIT
+          if [[ "true" == "${{ matrix.valgrind }}" ]]; then
+            cmake_valgrind_opt=-DTEST_WITH_VALGRIND=ON
+          fi
+
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON $cmake_valgrind_opt -DTEST_OUTPUT=JUNIT
           cmake --build . --config Debug
       - name: Run Tests
         run: |
@@ -183,7 +195,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Test Results (${{ matrix.toolset }} on linux)
-          path: "./build/test/*.xml"
+          path: "./build/test/test_*.xml"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -194,6 +206,21 @@ jobs:
           gcov_include: ./build
           gcov_ignore: ./build/test
           verbose: true
+
+      - name: Valgrind Memory check
+        if: always() && matrix.valgrind == true
+        run: |
+           pip install ValgrindCI
+           echo "Summary report of errors"
+           echo "Valgrind version: $(valgrind --version)"
+           ./ci/valgrind-ci.py --sources-directory=. --valgrind-directory=./build/test
+      - name: Archive valgrind report
+        if: always() && matrix.valgrind == true
+        uses: actions/upload-artifact@v3
+        with:
+          name: valgrind-report
+          path: build/valgrind-html/
+
 
   publish-test-results:
     name: "Publish Tests Results"

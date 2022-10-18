@@ -6,15 +6,7 @@
 
 namespace hyperoute
 {
-    static char* duplicate(const char* const in, std::size_t length)
-    {
-        char* out = new char[length+1];
-        std::strcpy(out, in);
-        out[length] = '\0';
-        return out;
-    }
-
-    context_params::context_params() = default;
+   context_params::context_params() = default;
     context_params::context_params(context_params&& other) = default;
     context_params& context_params::operator=(context_params&&) = default;
 

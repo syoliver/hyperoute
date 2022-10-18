@@ -5,11 +5,22 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
 find_package(turtle REQUIRED)
 
-
 set(TEST_OUTPUT_EXTENSION "txt")
 if(TEST_OUTPUT STREQUAL "XML" OR TEST_OUTPUT STREQUAL "JUNIT")
     set(TEST_OUTPUT_EXTENSION "xml")
 endif()
+
+macro(add_hyperoute_test)
+    cmake_parse_arguments(ADD_HYPEROUTE_TEST "BY_PASS" "NAME" ""  ${ARGN})
+
+    unset(valgrind_launcher)
+    if(TEST_WITH_VALGRIND AND NOT ADD_HYPEROUTE_TEST_BY_PASS)
+        set(valgrind_launcher valgrind --leak-check=full --xml=yes --xml-file=valgrind_${ADD_HYPEROUTE_TEST_NAME}.xml)
+    endif()
+
+    add_test(NAME ${ADD_HYPEROUTE_TEST_NAME} COMMAND ${valgrind_launcher} ./${ADD_HYPEROUTE_TEST_NAME} --log_format=${TEST_OUTPUT} --log_level=all --log_sink=test_${ADD_HYPEROUTE_TEST_NAME}.${TEST_OUTPUT_EXTENSION})
+endmacro()
+
 
 add_executable(hyperoute_test main.cpp)
 
@@ -29,8 +40,7 @@ PUBLIC
 )
 set_target_properties(hyperoute_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
-add_test(NAME hyperoute_test COMMAND hyperoute_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=hyperoute_test.${TEST_OUTPUT_EXTENSION})
-
+add_hyperoute_test(NAME hyperoute_test)
 
 #########################################################
 
@@ -46,7 +56,7 @@ PRIVATE
 
 set_target_properties(context_params_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
-add_test(NAME context_params_test COMMAND context_params_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=context_params_test.${TEST_OUTPUT_EXTENSION})
+add_hyperoute_test(NAME context_params_test)
 
 #########################################################
 
@@ -68,7 +78,7 @@ PUBLIC
 
 set_target_properties(translate_route_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
-add_test(NAME translate_route_test COMMAND translate_route_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=translate_route_test.${TEST_OUTPUT_EXTENSION})
+add_hyperoute_test(NAME translate_route_test)
 
 
 #########################################################
@@ -91,7 +101,7 @@ PUBLIC
 
 set_target_properties(route_trie_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
-add_test(NAME route_trie_test COMMAND route_trie_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=route_trie_test.${TEST_OUTPUT_EXTENSION})
+add_hyperoute_test(NAME route_trie_test)
 
 
 #########################################################
@@ -108,7 +118,7 @@ PRIVATE
 
 set_target_properties(google_api_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
-add_test(NAME google_api_test COMMAND google_api_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=google_api_test.${TEST_OUTPUT_EXTENSION})
+add_hyperoute_test(NAME google_api_test)
 
 #########################################################
 
@@ -128,4 +138,5 @@ endif()
 
 set_target_properties(github_api_test PROPERTIES CXX_STANDARD ${HYPEROUTE_CXX_STANDARD})
 
-add_test(NAME github_api_test COMMAND github_api_test --log_format=${TEST_OUTPUT} --log_level=all --log_sink=github_api_test.${TEST_OUTPUT_EXTENSION})
+# Bypass valgrind on github because it leads to timeout
+add_hyperoute_test(NAME github_api_test BY_PASS TRUE)

@@ -10,6 +10,7 @@ project(
 option(BUILD_TESTING "Build tests" ON)
 set(TEST_OUTPUT "HRF" CACHE STRING "Test output type: HRF, XML or JUNIT")
 
+option(TEST_WITH_VALGRIND "Run tests suite with valgrind" OFF)
 option(BUILD_BENCHMARK "Build benchmarks" ON)
 
 
@@ -195,3 +196,10 @@ endif()
 if(BUILD_BENCHMARK)
     add_subdirectory(benchmark test/benchmark)
 endif()
+
+
+add_custom_target(
+    format
+    COMMAND ${CMAKE_COMMAND} -P cmake/format.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)

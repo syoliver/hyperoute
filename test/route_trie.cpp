@@ -1,8 +1,8 @@
 #define BOOST_TEST_MODULE TestHyperRoute::RouteTrie
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-
 #include <route_trie.hpp>
+
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(route_prefix)
 
@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_SUITE(route_prefix)
             BOOST_TEST(*opt_value == 1);
             BOOST_TEST(context.match_end == std::strlen("/a/path"));
         }
-        
+
         {
             const auto opt_value = trie.search("/another/path", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
@@ -35,7 +35,6 @@ BOOST_AUTO_TEST_SUITE(route_prefix)
             BOOST_TEST_REQUIRE(opt_value.has_value() == false);
         }
     }
-
 
     BOOST_AUTO_TEST_CASE(insert_static_before_prefix)
     {
@@ -53,7 +52,7 @@ BOOST_AUTO_TEST_SUITE(route_prefix)
             BOOST_TEST(*opt_value == 1);
             BOOST_TEST(context.match_end == std::strlen("/a/path"));
         }
-        
+
         {
             const auto opt_value = trie.search("/a/path/with/another/suffix", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
@@ -83,7 +82,7 @@ BOOST_AUTO_TEST_SUITE(route_prefix)
             BOOST_TEST(*opt_value == 1);
             BOOST_TEST(context.match_end == std::strlen("/a/path/with/a/suffix"));
         }
-        
+
         {
             const auto opt_value = trie.search("/a/path/with/another/suffix", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
@@ -115,7 +114,7 @@ BOOST_AUTO_TEST_SUITE(static_routes)
             BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 1);
         }
-        
+
         {
             const auto opt_value = trie.search("/another/path", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
@@ -131,7 +130,7 @@ BOOST_AUTO_TEST_SUITE(static_routes)
     BOOST_AUTO_TEST_CASE(insert_dependent_static_routes)
     {
         hyperoute::route_trie trie;
-        BOOST_TEST(trie.insert("^\\/a$", 1));    
+        BOOST_TEST(trie.insert("^\\/a$", 1));
         BOOST_TEST(trie.insert("^\\/a\\/path$", 2));
 
         auto context = trie.create_search_context();
@@ -141,7 +140,7 @@ BOOST_AUTO_TEST_SUITE(static_routes)
             BOOST_TEST(opt_value.has_value());
             BOOST_TEST(*opt_value == 1);
         }
-        
+
         {
             const auto opt_value = trie.search("/a/path", context);
             BOOST_TEST(opt_value.has_value());
@@ -153,7 +152,6 @@ BOOST_AUTO_TEST_SUITE(static_routes)
             BOOST_TEST(opt_value.has_value() == false);
         }
     }
-
 
     BOOST_AUTO_TEST_CASE(insert_twice_static_routes)
     {
@@ -183,7 +181,7 @@ BOOST_AUTO_TEST_SUITE(static_routes)
             BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 1);
         }
-        
+
         {
             const auto opt_value = trie.search("/another/path", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
@@ -205,6 +203,7 @@ BOOST_AUTO_TEST_SUITE(static_routes)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(matched_routes)
+
     BOOST_AUTO_TEST_CASE(insert_matched_routes)
     {
         hyperoute::route_trie trie;
@@ -215,7 +214,7 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
         BOOST_TEST(trie.insert("^\\/people\\/([^\\/]+)/openIdConnect$", 5));
 
         trie.print_trie();
-        
+
         auto context = trie.create_search_context();
 
         BOOST_TEST(context.captures.capacity() == 2);
@@ -245,7 +244,7 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
             BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 3);
         }
-        
+
         {
             const auto opt_value = trie.search("/people/8653513251/people/854635145841", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
@@ -281,7 +280,7 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
             const auto opt_value = trie.search("/people/an_user/a_collection", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 1);
-            
+
             BOOST_TEST_REQUIRE(context.captures.size() == 1);
             BOOST_TEST(context.captures[0] == "an_user");
         }
@@ -290,7 +289,7 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
             const auto opt_value = trie.search("/people/135413251/a_collection", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 1);
-            
+
             BOOST_TEST_REQUIRE(context.captures.size() == 1);
             BOOST_TEST(context.captures[0] == "135413251");
         }
@@ -299,7 +298,7 @@ BOOST_AUTO_TEST_SUITE(matched_routes)
             const auto opt_value = trie.search("/people/an_user/6543213", context);
             BOOST_TEST_REQUIRE(opt_value.has_value());
             BOOST_TEST(*opt_value == 2);
-            
+
             BOOST_TEST_REQUIRE(context.captures.size() == 1);
             BOOST_TEST(context.captures[0] == "6543213");
         }
@@ -308,6 +307,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_AUTO_TEST_SUITE(parsing_error)
+
     BOOST_AUTO_TEST_CASE(insert_invalid_route)
     {
         hyperoute::route_trie trie;

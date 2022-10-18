@@ -109,9 +109,54 @@ BOOST_DATA_TEST_CASE( translation_dot_brace, boost::unit_test::data::make({ true
 
 BOOST_DATA_TEST_CASE( translation_failure_brace_not_balanced, boost::unit_test::data::make({ true, false }), prefix_mode)
 {
-    std::error_condition ec;
-    const auto result = hyperoute::translate_route("/vehicle/{id:{", prefix_mode, ec);
-    BOOST_TEST((ec == hyperoute::error::unbalanced_brace), "check ec == hyperoute::error::unbalanced_brace has failed [ec == " << ec.message() << "]");
+
+    {
+        std::error_condition ec;
+        const auto result = hyperoute::translate_route("/vehicle/{id:{", prefix_mode, ec);
+        BOOST_TEST((ec == hyperoute::error::unbalanced_brace), "check ec == hyperoute::error::unbalanced_brace has failed [ec == " << ec.message() << "]");
+    }
+
+    {
+        std::error_condition ec;
+        const auto result = hyperoute::translate_route("/vehicle}", prefix_mode, ec);
+        BOOST_TEST((ec == hyperoute::error::unbalanced_brace), "check ec == hyperoute::error::unbalanced_brace has failed [ec == " << ec.message() << "]");
+    }
+
+    {
+        std::error_condition ec;
+        const auto result = hyperoute::translate_route("/vehicle\\}", prefix_mode, ec);
+        BOOST_TEST(!ec);
+        BOOST_TEST(result.first == std::string("^\\/vehicle\\}") + (prefix_mode?"":"$"));
+        BOOST_TEST(result.second.empty());
+    }
+
+
+    {
+        std::error_condition ec;
+        const auto result = hyperoute::translate_route("/vehicle\\{", prefix_mode, ec);
+        BOOST_TEST(!ec);
+        BOOST_TEST(result.first == std::string("^\\/vehicle\\{") + (prefix_mode?"":"$"));
+        BOOST_TEST(result.second.empty());
+    }
+
+    {
+        std::error_condition ec;
+        const auto result = hyperoute::translate_route("/vehicle\\{\\}/two", prefix_mode, ec);
+        BOOST_TEST(!ec);
+        BOOST_TEST(result.first == std::string("^\\/vehicle\\{\\}\\/two") + (prefix_mode?"":"$"));
+        BOOST_TEST(result.second.empty());
+    }
+
+
+    {
+        std::error_condition ec;
+        const auto result = hyperoute::translate_route("/vehicle/{id:[0-9]{3}}", prefix_mode, ec);
+        BOOST_TEST(!ec);
+        BOOST_TEST(result.first == std::string("^\\/vehicle\\/([0-9]{3})") + (prefix_mode?"":"$"));
+        BOOST_TEST(result.second.size() == 1);
+        BOOST_TEST(result.second[0].name == "id");
+        BOOST_TEST(result.second[0].group == 1);
+    }
 }
 
 
