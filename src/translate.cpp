@@ -1,14 +1,17 @@
 
-#include <translate.hpp>
-#include <error_category.hpp>
 #include <hyperoute/error.hpp>
-#include <sstream>
+
+#include <error_category.hpp>
+#include <translate.hpp>
+
 #include <iostream>
+#include <sstream>
 
 namespace hyperoute
 {
 
-std::pair<std::string, std::vector<capture_t>> translate_route(const std::string_view route, const bool prefix_mode, std::error_condition& ec)
+std::pair<std::string, std::vector<capture_t>>
+translate_route(const std::string_view route, const bool prefix_mode, std::error_condition &ec)
 {
     std::ostringstream oss_regex;
     std::vector<capture_t> captures;
@@ -34,9 +37,9 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
         {
             if(in_regex == false && *iter == ':')
             {
-                captures.back().name = std::string_view(&*token_begin, (iter-token_begin));
+                captures.back().name = std::string_view(&*token_begin, (iter - token_begin));
                 captures.back().has_regex = true;
-                token_begin = iter+1;
+                token_begin = iter + 1;
                 in_regex = true;
             }
             else if(*iter == '}')
@@ -45,15 +48,15 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
                 {
                     if(captures.back().name.empty())
                     {
-                        captures.back().name = std::string_view(&*token_begin, (iter-token_begin));
+                        captures.back().name = std::string_view(&*token_begin, (iter - token_begin));
                         oss_regex << "([^\\/]+)";
                     }
                     else
                     {
-                        oss_regex << '(' << std::string_view(&*token_begin, (iter-token_begin)) << ')';
+                        oss_regex << '(' << std::string_view(&*token_begin, (iter - token_begin)) << ')';
                     }
 
-                    token_begin = iter+1;
+                    token_begin = iter + 1;
                     in_regex = false;
                     in_capture = false;
                 }
@@ -93,64 +96,64 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
         {
             switch(*iter)
             {
-                case '{':
+            case '{':
+            {
+                if(skip)
                 {
-                    if(skip)
-                    {
-                        oss_regex << "\\{";
-                        token_begin = iter+1;
-                    }
-                    else
-                    {
-                        oss_regex << std::string_view(&*token_begin, (iter-token_begin));
-                        token_begin = iter+1;
-                        captures.emplace_back();
-                        ++current_group;
-                        captures.back().has_regex = false;
-                        captures.back().group = current_group;
-                        in_capture = true;
-                    }
-                    break;
+                    oss_regex << "\\{";
+                    token_begin = iter + 1;
                 }
-                case '}':
+                else
                 {
-                    if(skip)
-                    {
-                        oss_regex << "\\}";
-                        token_begin = iter+1;
-                    }
-                    else
-                    {
-                        ec = make_error_condition(error::unbalanced_brace);
-                    }
-                    break;
+                    oss_regex << std::string_view(&*token_begin, (iter - token_begin));
+                    token_begin = iter + 1;
+                    captures.emplace_back();
+                    ++current_group;
+                    captures.back().has_regex = false;
+                    captures.back().group = current_group;
+                    in_capture = true;
                 }
-                case '\\':
+                break;
+            }
+            case '}':
+            {
+                if(skip)
                 {
-                    oss_regex << std::string_view(&*token_begin, (iter-token_begin));
-                    token_begin = iter+1;
-                    want_next_skip = true;
-                    break;
+                    oss_regex << "\\}";
+                    token_begin = iter + 1;
                 }
-                case '/':
-                case '.':
-                case '?':
-                case '(':
-                case ')':
-                case '[':
-                case ']':
-                case '*':
-                case '+':
-                case '^':
+                else
                 {
-                    oss_regex << std::string_view(&*token_begin, (iter-token_begin));
-                    oss_regex << '\\';
-                    token_begin = iter;
-                    break;
+                    ec = make_error_condition(error::unbalanced_brace);
                 }
-                default:
-                    /* nothing */
-                    break;
+                break;
+            }
+            case '\\':
+            {
+                oss_regex << std::string_view(&*token_begin, (iter - token_begin));
+                token_begin = iter + 1;
+                want_next_skip = true;
+                break;
+            }
+            case '/':
+            case '.':
+            case '?':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '*':
+            case '+':
+            case '^':
+            {
+                oss_regex << std::string_view(&*token_begin, (iter - token_begin));
+                oss_regex << '\\';
+                token_begin = iter;
+                break;
+            }
+            default:
+                /* nothing */
+                break;
             }
         }
         ++iter;
@@ -170,8 +173,8 @@ std::pair<std::string, std::vector<capture_t>> translate_route(const std::string
     {
         oss_regex << '$';
     }
-    
+
     return std::pair(oss_regex.str(), std::move(captures));
 }
 
-}
+}  // namespace hyperoute

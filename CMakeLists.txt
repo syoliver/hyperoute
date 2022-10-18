@@ -196,3 +196,10 @@ endif()
 if(BUILD_BENCHMARK)
     add_subdirectory(benchmark test/benchmark)
 endif()
+
+
+add_custom_target(
+    format
+    COMMAND ${CMAKE_COMMAND} -P cmake/format.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
